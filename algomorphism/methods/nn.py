@@ -61,7 +61,7 @@ def pca_denoising(p_expls, pca_emb_expls, pca_emb_pred, knn, knn_pca, Dx=0, Dy=1
     return pca_emb_pred
 
 
-def pca_denoising_preprocessing(model, dataset, Z, Y, embidx=0, pca_emb_idxs=[0, 1, 2]):
+def pca_denoising_preprocessing(model, dataset, Z, Y, pca_emb_idxs, embidx=0):
     """
     Args:
         model: An object, this object interference ` algomorphism.BaseNeuralNetowk ` objcet & tensorflow.{tf.Module, tf.keras.models.Model},
@@ -72,29 +72,35 @@ def pca_denoising_preprocessing(model, dataset, Z, Y, embidx=0, pca_emb_idxs=[0,
         pca_emb_idxs: (Optional) . Default is [0,1,2].
 
     Returns:
-        pca_vl: A ndarray, pca denoised validation embeddings where predicted,
-        pca_ts: A ndarray, pca denoised test embeddings where predicted,
+        pca_vl_s: A ndarray, pca denoised validation seen embeddings where predicted,
+        pca_ts_s: A ndarray, pca denoised test seen embeddings where predicted,
+        pca_vl_u: A ndarray, pca denoised validation unseen unseen embeddings where predicted,
+        pca_ts_u: A ndarray, pca denoised test unssen embeddings where predicted,
         pca_emb: A ndarray, pca denoised true embeddings,
         knn_pca: A KNeighborsClassifier object.
     """
-    (_, _, p_train), (_, _, p_val), (_, _, p_test) = model.get_results(dataset, False)
+    results_dict = model.get_results(dataset,  is_score=False)
 
     pca = PCA(n_components=2)
     pca.fit(Z)
 
     pca_emb = pca.transform(Z)
-    pca_vl = pca.transform(p_val[embidx])
-    pca_ts = pca.transform(p_test[embidx])
+    pca_vl_seen = pca.transform(results_dict['val_seen'][-1][embidx])
+    pca_ts_seen = pca.transform(results_dict['test_seen'][-1][embidx])
+    pca_vl_unseen = pca.transform(results_dict['val_unseen'][-1][embidx])
+    pca_ts_unseen = pca.transform(results_dict['test_unseen'][-1][embidx])
 
     Dx = 0
     Dy = 1
     knn_pca = KNeighborsClassifier(1)
     knn_pca.fit(pca_emb[:, [Dx, Dy]][pca_emb_idxs], Y[pca_emb_idxs])
 
-    pca_vl = pca_denoising(p_val[embidx], pca_emb, pca_vl, model.knn, knn_pca)
-    pca_ts = pca_denoising(p_test[embidx], pca_emb, pca_ts, model.knn, knn_pca)
+    pca_vl_s = pca_denoising(results_dict['val_seen'][-1][embidx], pca_emb, pca_vl_seen, model.knn, knn_pca)
+    pca_ts_s = pca_denoising(results_dict['test_seen'][-1][embidx], pca_emb, pca_ts_seen, model.knn, knn_pca)
+    pca_vl_u = pca_denoising(results_dict['val_unseen'][-1][embidx], pca_emb, pca_vl_unseen, model.knn, knn_pca)
+    pca_ts_u = pca_denoising(results_dict['test_unseen'][-1][embidx], pca_emb, pca_ts_unseen, model.knn, knn_pca)
 
-    return pca_vl, pca_ts, pca_emb, knn_pca
+    return pca_vl_s, pca_ts_s, pca_vl_u, pca_ts_u, pca_emb, knn_pca
 
 
 def n_identity_matrix(N):

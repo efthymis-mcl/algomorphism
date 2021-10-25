@@ -4,6 +4,7 @@ import random
 import math
 from algomorphism.datasets import GraphBaseDataset
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
 
@@ -143,3 +144,164 @@ class SimpleGraphsDataset(GraphBaseDataset):
 
         return g, graph_label
 
+
+class SeenUnseenBase(object):
+    def __init__(self, seen, unseen):
+        self.seen = seen
+        self.unseen = unseen
+
+
+# Zero Shot Learning task
+class BubbleDataset(object):
+
+    def __init__(self, n_data=5000, train_per=0.6, val_per=0.3, test_per=0.1, seen_classes=None, unseen_classes=None,
+                 sigma=1.0):
+        class_names = ['top_left', 'top_right', 'middle', 'bottom_left', 'bottom_right']
+        class_embeddings = np.array([
+            [-1.0, 1.0],
+            [1.0, 1.0],
+            [0.0, 0.0],
+            [-1.0, -1.0],
+            [1.0, -1.0]
+        ])
+
+        if seen_classes is None:
+            seen_classes = ['top_left', 'top_right', 'bottom_left', 'bottom_right']
+        if unseen_classes is None:
+            unseen_classes = ['middle']
+
+        examples_per_class = n_data//len(class_names)
+        self.data_dict = dict.fromkeys(class_names)
+        for k, cl_emb in zip(self.data_dict.keys(), class_embeddings):
+            self.data_dict[k] = {
+                'class_emb': cl_emb,
+                'x': cl_emb + sigma*np.random.randn(examples_per_class, 2)
+            }
+
+        x_train = []
+        y_emb_train = []
+        y_train = []
+
+        x_val_seen = []
+        y_emb_val_seen = []
+        y_val_seen = []
+        x_val_unseen = []
+        y_emb_val_unseen = []
+        y_val_unseen = []
+
+        x_test_seen = []
+        y_emb_test_seen = []
+        y_test_seen = []
+        x_test_unseen = []
+        y_emb_test_unseen = []
+        y_test_unseen = []
+
+        self.__lb = LabelBinarizer()
+        self.__lb.fit(class_names)
+
+        for k, v in self.data_dict.items():
+            one_hot_key = self.__lb.transform([k])[0]
+            if k in seen_classes:
+                x_tr, x_vl_ts = train_test_split(v['x'], train_size=train_per)
+                x_vl, x_ts = train_test_split(x_vl_ts, train_size=test_per / train_per)
+
+                x_train.append(x_tr)
+                x_val_seen.append(x_vl)
+                x_test_seen.append(x_ts)
+
+                y_emb_train.append(np.stack([v['class_emb']]*x_tr.shape[0], axis=0))
+                y_emb_val_seen.append(np.stack([v['class_emb']]*x_vl.shape[0], axis=0))
+                y_emb_test_seen.append(np.stack([v['class_emb']]*x_ts.shape[0], axis=0))
+
+                y_train.append(np.stack([one_hot_key]*x_tr.shape[0], axis=0))
+                y_val_seen.append(np.stack([one_hot_key] * x_vl.shape[0], axis=0))
+                y_test_seen.append(np.stack([one_hot_key] * x_ts.shape[0], axis=0))
+
+            elif k in unseen_classes:
+                x_vl, x_ts = train_test_split(v['x'], train_size=test_per / val_per)
+                x_val_unseen.append(x_vl)
+                x_test_unseen.append(x_ts)
+                y_emb_val_unseen.append(np.stack([v['class_emb']] * x_vl.shape[0], axis=0))
+                y_emb_test_unseen.append(np.stack([v['class_emb']] * x_ts.shape[0], axis=0))
+
+                y_val_unseen.append(np.stack([one_hot_key] * x_vl.shape[0], axis=0))
+                y_test_unseen.append(np.stack([one_hot_key] * x_ts.shape[0], axis=0))
+
+        x_train = np.concatenate(x_train, axis=0)
+        y_emb_train = np.concatenate(y_emb_train, axis=0)
+        y_train = np.concatenate(y_train, axis=0)
+
+        x_val_seen = np.concatenate(x_val_seen, axis=0)
+        y_emb_val_seen = np.concatenate(y_emb_val_seen, axis=0)
+        y_val_seen = np.concatenate(y_val_seen, axis=0)
+        x_val_unseen = np.concatenate(x_val_unseen, axis=0)
+        y_emb_val_unseen = np.concatenate(y_emb_val_unseen, axis=0)
+        y_val_unseen = np.concatenate(y_val_unseen, axis=0)
+
+        x_test_seen = np.concatenate(x_test_seen, axis=0)
+        y_emb_test_seen = np.concatenate(y_emb_test_seen, axis=0)
+        y_test_seen = np.concatenate(y_test_seen, axis=0)
+        x_test_unseen = np.concatenate(x_test_unseen, axis=0)
+        y_emb_test_unseen = np.concatenate(y_emb_test_unseen, axis=0)
+        y_test_unseen = np.concatenate(y_test_unseen, axis=0)
+
+        rnd_idx = np.arange(0, x_train.shape[0])
+        np.random.shuffle(rnd_idx)
+        x_train = x_train[rnd_idx]
+        y_emb_train = y_emb_train[rnd_idx]
+        y_train = y_train[rnd_idx]
+
+        rnd_idx = np.arange(0, x_val_seen.shape[0])
+        np.random.shuffle(rnd_idx)
+        x_val_seen = x_val_seen[rnd_idx]
+        y_emb_val_seen = y_emb_val_seen[rnd_idx]
+        y_val_seen = y_val_seen[rnd_idx]
+
+        rnd_idx = np.arange(0, x_val_unseen.shape[0])
+        np.random.shuffle(rnd_idx)
+        x_val_unseen = x_val_unseen[rnd_idx]
+        y_emb_val_unseen = y_emb_val_unseen[rnd_idx]
+        y_val_unseen = y_val_unseen[rnd_idx]
+
+        rnd_idx = np.arange(0, x_test_seen.shape[0])
+        np.random.shuffle(rnd_idx)
+        x_test_seen = x_test_seen[rnd_idx]
+        y_emb_test_seen = y_emb_test_seen[rnd_idx]
+        y_test_seen = y_test_seen[rnd_idx]
+
+        rnd_idx = np.arange(0, x_test_unseen.shape[0])
+        np.random.shuffle(rnd_idx)
+        x_test_unseen = x_test_unseen[rnd_idx]
+        y_emb_test_unseen = y_emb_test_unseen[rnd_idx]
+        y_test_unseen = y_test_unseen[rnd_idx]
+
+        self.train = tf.data.Dataset.from_tensor_slices((
+            tf.cast(x_train, tf.float32),
+            tf.cast(y_emb_train, tf.float32),
+            tf.cast(y_train, tf.float32),
+        )).batch(128)
+
+        self.val = SeenUnseenBase(
+            seen=tf.data.Dataset.from_tensor_slices((
+                tf.cast(x_val_seen, tf.float32),
+                tf.cast(y_emb_val_seen, tf.float32),
+                tf.cast(y_val_seen, tf.float32),
+            )).batch(128),
+            unseen=tf.data.Dataset.from_tensor_slices((
+                tf.cast(x_val_unseen, tf.float32),
+                tf.cast(y_emb_val_unseen, tf.float32),
+                tf.cast(y_val_unseen, tf.float32),
+            )).batch(128)
+        )
+        self.test = SeenUnseenBase(
+            seen=tf.data.Dataset.from_tensor_slices((
+                tf.cast(x_test_seen, tf.float32),
+                tf.cast(y_emb_test_seen, tf.float32),
+                tf.cast(y_test_seen, tf.float32),
+            )).batch(128),
+            unseen=tf.data.Dataset.from_tensor_slices((
+                tf.cast(x_test_unseen, tf.float32),
+                tf.cast(y_emb_test_unseen, tf.float32),
+                tf.cast(y_test_unseen, tf.float32),
+            )).batch(128)
+        )

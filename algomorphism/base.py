@@ -1,3 +1,4 @@
+from itertools import product
 from typing import Union
 
 import tensorflow as tf
@@ -19,11 +20,37 @@ class MetricLossBase(object):
     - 1: output loss
     - 2: output metric
     """
+    def __init__(self, model=None):
+        """
 
-    def __init__(self):
-        pass
+        Args:
+            model:
+        """
+        if model is not None:
+            if hasattr(model, 'call'):
+                self.__callfn = model.call
+            else:
+                self.__callfn = model.__call__
 
-    def status_idxs(self, type: int, status: list):
+    def predict_outputs(self, inputs, is_score=False, set_is_score=False):
+        """
+        Args:
+            inputs:
+            is_score:
+            set_is_score:
+
+        Returns:
+            pred_outputs:
+        """
+        if is_score:
+            pred_outputs = self.__callfn(inputs, set_is_score)
+        else:
+            pred_outputs = self.__callfn(inputs)
+
+        return pred_outputs
+
+    @staticmethod
+    def status_idxs(type: int, status: list):
         """
         Args:
             type: A int, type of status (0, 1 or 2),
@@ -36,18 +63,19 @@ class MetricLossBase(object):
             Giving an example usage where the example have 3 data types (input, output (1st) with loss status type, output (2nd)
             with metric & loss status type).
 
+            >>> mlb = MetricLossBase()
             >>> status = [[0], [1], [1,2]]
             >>> # 1st case
             >>> type = 0
-            >>> print(self.status_idxs(type, status))
+            >>> print(mlb.status_idxs(type, status))
             [0]
             >>> # 2nd case
             >>> type = 1
-            >>> print(self.status_idxs(type, status))
+            >>> print(mlb.status_idxs(type, status))
             [1, 2]
             >>> # 3rd case
             >>> type = 2
-            >>> print(self.status_idxs(type, status))
+            >>> print(mlb.status_idxs(type, status))
             [2]
         """
         idxs = []
@@ -56,8 +84,8 @@ class MetricLossBase(object):
                 idxs.append(i)
         return idxs
 
-
-    def get_batch_by_indxs(self, batch: Union[list, tuple], idxs: list):
+    @staticmethod
+    def get_batch_by_indxs(batch: Union[list, tuple], idxs: list):
         """
 
         Args:
@@ -81,7 +109,6 @@ class MetricBase(MetricLossBase):
       __mtr_idxs: A list, indexes list of status with for output type status,
       __mtr_select: A list, list of indexes of __mtr,
       __input_idxs: A list, indexes list of input data examples,
-      __callfn: An object, model call method.
     """
 
     def __init__(self, model, mtrs_obj, status, mtr_select, status_out_type=2):
@@ -94,32 +121,27 @@ class MetricBase(MetricLossBase):
           mtr_select: A list, list of indexes of mtrs_obj,
           status_out_type: int (optional), type of output data of examples. Default is 2.
         """
-        super(MetricBase, self).__init__()
+        super(MetricBase, self).__init__(model)
         self.__mtr = mtrs_obj
         self.__mtr_idxs = self.status_idxs(status_out_type, status)
         self.__mtr_select = mtr_select
         self.__input_idxs = self.status_idxs(0, status)
 
-        if hasattr(model, 'call'):
-            self.__callfn = model.call
-        else:
-            self.__callfn = model.__call__
-
-    def metric_dataset(self, dataset: tf.data.Dataset):
+    def metric_dataset(self, dataset_example, is_score=False):
         """
         Calculate the average metric over all metrics depends on dataset (examples) status structure.
 
         Args:
-          dataset: A tf.data.Dataset,
+          dataset_example: A tf.data.Dataset,
         Returns:
           mtr: tf float, average metric of all metrics summation.
 
         """
-        for batch in dataset:
+        for batch in dataset_example:
             inputs = self.get_batch_by_indxs(batch, self.__input_idxs)
             true_outputs = self.get_batch_by_indxs(batch, self.__mtr_idxs)
-            predict_outputs = self.__callfn(inputs)
-            self.metric_batch(true_outputs, predict_outputs)
+            pred_outputs = self.predict_outputs(inputs, is_score, is_score)
+            self.metric_batch(true_outputs, pred_outputs)
 
         mtr = 0
         for metric in self.__mtr:
@@ -151,7 +173,6 @@ class LossBase(MetricLossBase):
       __loss_idxs: A list, indexes list of status with for output type status,
       __loss_select: A list, list of indexes of __loss,
       __input_idxs: A list, indexes list of input data examples,
-      __callfn: An object, model call method.
     """
 
     def __init__(self, model, losses_obj, status, loss_select):
@@ -163,21 +184,17 @@ class LossBase(MetricLossBase):
           status: A list, nested list of status per data of examples,
           loss_select: A list, list of indexes of losses_obj.
         """
-        super(LossBase, self).__init__()
+        super(LossBase, self).__init__(model)
         self.__loss = losses_obj
         self.__loss_idxs = self.status_idxs(1, status)
         self.__loss_select = loss_select
         self.__input_idxs = self.status_idxs(0, status)
 
-        if hasattr(model, 'call'):
-            self.__callfn = model.call
-        else:
-            self.__callfn = model.__call__
-
-    def loss_batch(self, batch: Union[list, tuple]):
+    def loss_batch(self, batch: Union[list, tuple], is_score=False):
         """
         Compute loss over all losses objects (__loss list) using summation.
         Args:
+          is_score: A boolean, for zero shot case
           batch: A list or tuple, subset of data examples.
 
         Returns:
@@ -185,15 +202,15 @@ class LossBase(MetricLossBase):
         """
         loss = 0
         inputs = self.get_batch_by_indxs(batch, self.__input_idxs)
-        predict_outputs = self.__callfn(inputs)
+        pred_outputs = self.predict_outputs(inputs, is_score, False)
         true_outputs = self.get_batch_by_indxs(batch, self.__loss_idxs)
         for i, ls in enumerate(self.__loss_select):
-            loss += self.__loss[ls](true_outputs[i], predict_outputs[i])
+            loss += self.__loss[ls](true_outputs[i], pred_outputs[i])
 
         return loss
 
 
-class EarlyStoping(object):
+class EarlyStopping(object):
     """
     Attributes:
       es_strategy: A str, early stopping strategy. {'first_drop' or 'patience'},
@@ -204,13 +221,13 @@ class EarlyStoping(object):
       Examples:
           # patience strategy example:
           >>> entry = {'es_strategy':'patience', 'es_metric':'val_cost', 'es_min_delta': 1e-3, 'es_patience': 10 }
-          >>> ES = EarlyStoping(entry)
+          >>> ES = EarlyStopping(entry)
           >>> print(ES.es_strategy)
           'patience'
 
           # first drop strategy
           >>> entry = {'es_strategy':'first_drop', 'es_metric':'val_score'}
-          >>> ES = EarlyStoping(entry)
+          >>> ES = EarlyStopping(entry)
           >>> print(ES.es_strategy)
           'first_drop'
 
@@ -273,7 +290,141 @@ class EarlyStoping(object):
             self.__save_weights_obj()
 
 
-class Trainer(object):
+class History(object):
+    """
+
+    """
+    def __init__(self, dataset, score_mtr_atr=None):
+        """
+
+        Args:
+            dataset:
+            score_mtr_atr:
+        """
+        dataset_attrs = self.__get_dataset_atr(dataset)
+        self.history = self.__set_up_history(dataset_attrs, score_mtr_atr)
+        self.__harmonic_score = lambda seen, unseen: 2*seen*unseen/(seen + unseen)
+
+    @staticmethod
+    def __get_dataset_atr(dataset):
+        """
+
+        Args:
+            dataset:
+
+        Returns:
+
+        """
+        def append_atr(dataset_attr, example_type):
+            if hasattr(dataset, example_type):
+                if hasattr(getattr(dataset, example_type), 'seen') and hasattr(getattr(dataset, example_type), 'unseen'):
+                    dataset_attr.append('{}_seen'.format(example_type))
+                    dataset_attr.append('{}_unseen'.format(example_type))
+                    dataset_attr.append('{}_harmonic'.format(example_type))
+                else:
+                    dataset_attr.append(example_type)
+            return dataset_attr
+
+        dataset_attr = []
+        example_types = ['val', 'test']
+        for ex_type in example_types:
+            dataset_attr = append_atr(dataset_attr, ex_type)
+        return dataset_attr
+
+    @staticmethod
+    def __set_up_history(dataset_attrs, score_mtr_atr):
+        """
+
+        Args:
+            dataset_attrs:
+            score_mtr_atr:
+
+        Returns:
+
+        """
+        mtrs_attr = ['cost']
+        if score_mtr_atr == 'score':
+            mtrs_attr.append('score')
+
+        history = {}
+        for mtr_attr in mtrs_attr:
+            history['train_{}'.format(mtr_attr)] = {}
+        for d_attr, mtr_attr in product(dataset_attrs, mtrs_attr):
+            if d_attr.split('_')[-1] != 'harmonic':
+                history['{}_{}'.format(d_attr, mtr_attr)] = {}
+            else:
+                history[d_attr] = {}
+
+        return history
+
+    def append_history_print(self, dataset, epoch, print_types=None):
+        """
+
+        Args:
+            dataset:
+            epoch:
+            print_types:
+
+        Returns:
+
+        """
+        def val_test_metrics(dataset_example, key_split):
+            if 'seen' in key_split:
+                if 'cost' in key_split:
+                    value = self.cost_mtr.metric_dataset(dataset_example.seen)
+                if 'score' in key_split:
+                    value = self.score_mtr.metric_dataset(dataset_example.seen, is_score=True)
+            elif 'unseen' in key_split:
+                if 'cost' in key_split:
+                    value = self.cost_mtr.metric_dataset(dataset_example.unseen)
+                if 'score' in key_split:
+                    value = self.score_mtr.metric_dataset(dataset_example.unseen, is_score=True)
+            elif 'harmonic' in key_split:
+                value = self.__harmonic_score(
+                    self.score_mtr.metric_dataset(dataset_example.seen, is_score=True),
+                    self.score_mtr.metric_dataset(dataset_example.unseen, is_score=True)
+                )
+            else:
+                if 'cost' in key_split:
+                    value = self.cost_mtr.metric_dataset(dataset_example)
+                if 'score' in key_split:
+                    value = self.score_mtr.metric_dataset(dataset_example)
+
+            return value
+
+        for key in self.history.keys():
+            key_split = key.split('_')
+            value = None
+            if 'train' in key_split and 'train' in print_types:
+                if 'cost' in key_split:
+                    value = self.cost_mtr.metric_dataset(dataset.train)
+                    self.history[key][epoch] = float(value.numpy())
+                    key_join = ' '.join(key_split)
+                    print('{}: {}'.format(key_join, value))
+                if 'score' in key_split:
+                    if any([True if 'seen' in k.split('_') else False for k in self.history.keys()]):
+                        is_score = True
+                    else:
+                        is_score = False
+                    value = self.score_mtr.metric_dataset(dataset.train, is_score)
+                    self.history[key][epoch] = float(value.numpy())
+                    key_join = ' '.join(key_split)
+                    print('{}: {}'.format(key_join, value))
+
+            elif 'val' in key_split and 'val' in print_types:
+                value = val_test_metrics(dataset.val, key_split)
+                self.history[key][epoch] = float(value.numpy())
+                key_join = ' '.join(key_split)
+                print('{}: {}'.format(key_join, value))
+
+            elif 'test' in key_split and 'test' in print_types:
+                value = val_test_metrics(dataset.test, key_split)
+                self.history[key][epoch] = float(value.numpy())
+                key_join = ' '.join(key_split)
+                print('{}: {}'.format(key_join, value))
+
+
+class Trainer(History):
     """
     Training options: early stopping and gradient clipping. Keep learning history and give a verity of optimizers.
 
@@ -282,13 +433,11 @@ class Trainer(object):
       __clip_norm: A float, gradient clipping (normalization method),
       __epochs_cnt: An int, epochs counter,
       __early_stop: A dict, early stopping attributes on dictionary. Default is None.
-      __score_mode: A bool, this boolean have use of switch the mode of zero shot nn model output (categorical (score) 'True' or vector 'False'),
-      history: A dict, history per metric ({train, val, test}_{score, cost} & harmonic_score) for epoch.
     """
 
-    def __init__(self, early_stop_vars=None, save_weights_obj=None, optimizer="SGD", learning_rate=1e-4, clip_norm=0.0):
+    def __init__(self, dataset, score_mtr_atr=None, early_stop_vars=None, save_weights_obj=None, optimizer="SGD", learning_rate=1e-4,
+                 clip_norm=0.0):
         """
-
         Args:
           early_stop_vars: A dict (optional), early stopping attributes on dictionary . Default is None,
           save_weights_obj: An object (optional), tf.models.Model or tf.Module object save_weights with partial input (path). Default is None.
@@ -296,6 +445,8 @@ class Trainer(object):
           learning_rate: A float (optional), learning rate of optimizer. Default is 1e-4,
           clip_norm: A float (optional). Default is 0.0 .
         """
+        super(Trainer, self).__init__(dataset, score_mtr_atr)
+
         if optimizer == "SGD":
             self.__optimizer = SGD(learning_rate, momentum=0.98)
         elif optimizer == "Adagrad":
@@ -310,17 +461,8 @@ class Trainer(object):
 
         self.__early_stop = None
         if early_stop_vars is not None:
-            self.__early_stop = EarlyStoping(early_stop_vars, save_weights_obj)
+            self.__early_stop = EarlyStopping(early_stop_vars, save_weights_obj)
         self.__epochs_cnt = 0
-        self.history = {
-            'train_cost': [],
-            'train_score': [],
-            'val_cost': [],
-            'val_score': [],
-            'test_cost': [],
-            'test_score': [],
-            'harmonic_score': []
-        }
 
     def set_lr_rate(self, lr):
         """
@@ -348,38 +490,13 @@ class Trainer(object):
           early_stop_vars: A dict, new early stopping parameters.
 
         """
-        self.__early_stop = EarlyStoping(early_stop_vars, None)
+        self.__early_stop = EarlyStopping(early_stop_vars, None)
 
-    def __print_add_history(self, dataset, dataset_type='train'):
-        self.set_score_mode(False)
-        cost_mtr = self.cost_mtr.metric_dataset(dataset)
-
-        self.history['{}_cost'.format(dataset_type)].append(
-            float(cost_mtr)
-        )
-        print('{}_cost: {}'.format(dataset_type, cost_mtr), end='')
-        self.set_score_mode(True)
-        if hasattr(self, 'score_mtr'):
-            score_mtr = self.score_mtr.metric_dataset(dataset)
-            self.history['{}_score'.format(dataset_type)].append(
-                float(score_mtr)
-            )
-            print(', {}_score: {}'.format(dataset_type, score_mtr), end='\n')
-
-            return cost_mtr, score_mtr
-        else:
-            print()
-            return cost_mtr, None
-
-    def train(self, dataset_train, epochs=10, dataset_val=None, dataset_test=None, history_learning_process=True):
-
-        # we use an print_return_history flag how to not use this maybe use class or curried function
-        # use something to not use 'if' again (like class)!
+    def train(self, dataset, epochs=10, print_types=None):
         for epoch in range(epochs):
             # super hard code
             self.__epochs_cnt += 1
-            self.set_score_mode(False)
-            for batch in dataset_train:
+            for batch in dataset.train:
                 with tf.GradientTape() as tape:
                     cost_loss = self.cost_loss.loss_batch(batch)
                 grads = tape.gradient(cost_loss, self.trainable_variables)
@@ -388,22 +505,8 @@ class Trainer(object):
                 self.__optimizer.apply_gradients(zip(grads, self.trainable_variables))
 
             print('Epoch {} finished'.format(self.__epochs_cnt), end='\n')
-            if history_learning_process:
-                self.set_score_mode(False)
-                train_cost_mtr, train_score_mtr = self.__print_add_history(dataset_train, dataset_type='train')
-                if dataset_val is not None:
-                    val_cost_mtr, val_score_mtr = self.__print_add_history(dataset_val, dataset_type='val')
-                if dataset_test is not None:
-                    test_cost_mtr, test_score_mtr = self.__print_add_history(dataset_test, dataset_type='test')
-
-                # post feature
-                # if dataset_val is not None and dataset_test is not None and 'test_score_mtr' in locals() and 'val_score_mtr' in locals():
-                #     harmonic_score = 2 * test_score_mtr * val_score_mtr / (test_score_mtr + val_score_mtr)
-                #
-                #     self.history['harmonic_score'].append(
-                #         float(harmonic_score)
-                #     )
-                #     print('harmonic score: {}'.format(harmonic_score))
+            if print_types is not None:
+                self.append_history_print(dataset, self.__epochs_cnt, print_types)
 
                 if self.__early_stop is not None:
                     if self.__early_stop.check_stop(copy.deepcopy(self.history)):
@@ -420,7 +523,7 @@ class BaseNeuralNetwork(Trainer):
       __score_mode: A bool, this boolean have use of switch the mode of zero shot nn model output (categorical (score) 'True' or vector 'False').
     """
 
-    def __init__(self, status, early_stop_vars=None, weights_outfile=None, optimizer="SGD", learning_rate=1e-4,
+    def __init__(self, status, dataset, score_mtr_atr=None, early_stop_vars=None, weights_outfile=None, optimizer="SGD", learning_rate=1e-4,
                  clip_norm=0.0):
         """
         Args:
@@ -435,7 +538,7 @@ class BaseNeuralNetwork(Trainer):
         if weights_outfile is not None:
             save_weights_obj = partial(self.save_weights,
                                        "{}/weights/weights_best_{}.tf".format(weights_outfile[0], weights_outfile[1]))
-        super(BaseNeuralNetwork, self).__init__(early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
+        super(BaseNeuralNetwork, self).__init__(dataset, score_mtr_atr, early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
 
         self.__status = status
         self.__score_mode = False
@@ -446,16 +549,7 @@ class BaseNeuralNetwork(Trainer):
         """
         return self.__score_mode
 
-    def set_score_mode(self, score_mode):
-        """
-        Score mode setter
-        Args:
-          score_mode: A bool, this boolean have use of switch the mode of zero shot nn model output (categorical (score) 'True' or vector 'False').
-
-        """
-        self.__score_mode = score_mode
-
-    def get_results(self, dataset, score_mode=False):
+    def get_results(self, dataset, is_score=False):
 
         def forloop(dataset_exmpl):
             in_idxs = self.cost_mtr.status_idxs(0, self.__status)
@@ -463,17 +557,35 @@ class BaseNeuralNetwork(Trainer):
             for batch in dataset_exmpl:
                 inputs = self.cost_mtr.get_batch_by_indxs(batch, in_idxs)
                 outs = self.cost_mtr.get_batch_by_indxs(batch, tr_out_idxs)
-                if hasattr(self, "__call__"):
-                    predict = self.__call__(inputs)
-                elif hasattr(self, "call"):
-                    predict = self.call(inputs)
+                if is_score:
+                    if hasattr(self, "__call__"):
+                        predict = self.__call__(inputs, is_score)
+                    elif hasattr(self, "call"):
+                        predict = self.call(inputs, is_score)
+                else:
+                    if hasattr(self, "__call__"):
+                        predict = self.__call__(inputs)
+                    elif hasattr(self, "call"):
+                        predict = self.call(inputs)
+
             return inputs, outs, predict
 
-        self.set_score_mode(score_mode)
-        inputs_train, outs_train, predict_train = forloop(dataset.train)
-        inputs_val, outs_val, predict_val = forloop(dataset.val)
-        inputs_test, outs_test, predict_test = forloop(dataset.test)
-        self.set_score_mode(False)
+        return_dict = {
+            'train': (forloop(dataset.train))
+        }
 
-        return (inputs_train, outs_train, predict_train), (inputs_val, outs_val, predict_val), (
-            inputs_test, outs_test, predict_test)
+        if hasattr(dataset.val, 'seen'):
+            return_dict['val_seen'] = (forloop(dataset.val.seen))
+        if hasattr(dataset.val, 'unseen'):
+            return_dict['val_unseen'] = (forloop(dataset.val.unseen))
+        if not hasattr(dataset.val, 'seen') and not hasattr(dataset.val, 'unseen'):
+            return_dict['val'] = (forloop(dataset.val))
+
+        if hasattr(dataset.test, 'seen'):
+            return_dict['test_seen'] = (forloop(dataset.test.seen))
+        if hasattr(dataset.test, 'unseen'):
+            return_dict['test_unseen'] = (forloop(dataset.test.unseen))
+        if not hasattr(dataset.val, 'seen') and not hasattr(dataset.test, 'unseen'):
+            return_dict['test'] = (forloop(dataset.test))
+
+        return return_dict
