@@ -5,11 +5,12 @@ from functools import partial
 
 class WeightedCrossEntropyWithLogits(Metric):
     """
-  Object based on ` tf.nn.weighted_cross_entropy_with_logits ` with normalization parameter.
+    Object based on ` tf.nn.weighted_cross_entropy_with_logits ` with normalization parameter.
 
-  Attributes: __loss: An object, weighted cross entropy with logits loss object where the weight given as partial,
-  __norm: A float, normalization parameter. This attribute multiply with the outcome of __loss, __loss_sum: An object,
-  the sumation of __loss over batch where in most common usages at the end of epoch reset to $0$.
+    Attributes:
+        __loss: An object, weighted cross entropy with logits loss object where the weight given as partial,
+        __norm: A float, normalization parameter. This attribute multiply with the outcome of __loss, __loss_sum: An object,
+        the sumation of __loss over batch where in most common usages at the end of epoch reset to $0$.
     """
 
     def __init__(self, w_p, norm):
@@ -25,28 +26,29 @@ class WeightedCrossEntropyWithLogits(Metric):
 
     def update_state(self, y_true, y_pred):
         """
-    Update __loss_sum by averaging the output of __loss.
+        Update __loss_sum by averaging the output of __loss.
 
-    Args:
-      y_true: A tf_tensor, the true examples,
-      y_pred: A tf_tensor, the predicted output of neural network.
-    """
+        Args:
+            y_true: A tf_tensor, the true examples,
+            y_pred: A tf_tensor, the predicted output of neural network.
+        """
         self.__loss_sum.assign_add(tf.reduce_mean(self.__loss(y_true, y_pred)))
 
     def result(self):
         """
-    The result of normalized loss sum. The most common usage is after the end of epoch.
+        The result of normalized loss sum. The most common usage is after the end of epoch.
 
-    Returns:
-      norm_loss: A tf_float, the normalized loss sum.
-    """
+        Returns:
+            norm_loss: A tf_float, the normalized loss sum.
+        """
         norm_loss = self.__norm * self.__loss_sum
         return norm_loss
 
     def reset_states(self):
         """
-    Reset __loss_sum to $0$
-    """
+        Reset __loss_sum to $0$
+        """
+
         self.__loss_sum.assign(0)
 
 
@@ -75,40 +77,41 @@ class MeanSquaredErrorWithLambda(Metric):
 
     def update_state(self, y_true, y_pred):
         """
-    Update __loss_sum by averaging the output of __loss.
+        Update __loss_sum by averaging the output of __loss.
 
-    Args:
-      y_true: A tf_tensor, the true examples,
-      y_pred: A tf_tensor, the predicted output of neural network.
+        Args:
+            y_true: A tf_tensor, the true examples,
+            y_pred: A tf_tensor, the predicted output of neural network.
 
-    """
+        """
         l2loss = self.__loss(y_true, y_pred)
         self.__loss_sum.assign_add(tf.reduce_mean(l2loss))
 
     def result(self):
         """
-    The result of: loss multiplied with lambda. The most common usage is after the end of epoch.
+        The result of: loss multiplied with lambda. The most common usage is after the end of epoch.
 
-    Returns:
-      lambda_loss: A tf_float, loss multiplied with lambda.
-    """
+        Returns:
+            lambda_loss: A tf_float, loss multiplied with lambda.
+        """
         lambda_loss = self.__lambda * self.__loss_sum
         return lambda_loss
 
     def reset_states(self):
         """
-    Reset __loss_sum to $0$
+        Reset __loss_sum to $0$
+        """
 
-    """
         self.__loss_sum.assign(0)
 
     def set_lambda(self, lamda: float):
         """
-    Lamda setter.
-    Args:
-      lamda: A float, new lambda
+        Lamda setter.
 
-    """
+        Args:
+            lamda: A float, new lambda
+
+        """
         self.__lambda = lamda
 
 
@@ -129,6 +132,7 @@ class CategoricalCrossEntropyWithLambda(Metric):
         Args:
             lamda: float (optional), lambda parameter where using at multiplication with CCE loss. Default is 1.0 .
         """
+
         super(CategoricalCrossEntropyWithLambda, self).__init__(name='cce_l')
         self.__loss = tf.keras.metrics.CategoricalCrossentropy()
         self.__loss_sum = self.add_weight(name='loss_sum', initializer='zeros')

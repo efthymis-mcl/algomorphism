@@ -4,6 +4,7 @@ from networkx import Graph, adjacency_matrix
 import tensorflow as tf
 from typing import Union
 
+
 def a2g(A):
     """
     Adjacency matrix to graph object.
@@ -19,37 +20,6 @@ def a2g(A):
     g.add_edges_from(a)
     return g
 
-def renormalization(a):
-    """
-    Give an adjacency matrix and returns the renormalized.
-    Args:
-        a: A ndarray, adjacency matrix.
-
-    Returns:
-        atld: A ndarray, renormalized adjacency matrix.
-
-    Examples:
-        >>> a = np.array([[[0,1,1], [1,0,0], [1,0,0]]])
-        >>> atld = renormalization(a)
-        >>> print(atld)
-        [[[0.33333333 0.         0.        ]
-          [0.         0.5        0.        ]
-          [0.         0.         0.5       ]]]
-
-    References:
-        Thomas N. Kipf, Max Welling. Semi-supervised classification with graph convolutional networks,
-        https://arxiv.org/pdf/1609.02907.pdf
-    """
-
-    ai = a + np.eye(a.shape[-1])
-    degree = np.sum(ai, axis=-1)
-    degree = np.eye(a.shape[-1]) * degree
-    degree_inv = np.linalg.inv(degree)
-    degree_inv = np.power(degree_inv, 0.5)
-
-    atld = np.matmul(degree_inv, ai)
-    atld = np.matmul(atld, degree_inv)
-    return atld
 
 def random_uncycle_graph(num_v:int):
     """
@@ -108,50 +78,6 @@ def gen_batch_graphs(n_graphs=500, min_nv=5, max_nv=8):
         yield A, Atld, X
 
 
-def nx_graph(num_v, want):
-    """Random Graph.
-
-    Args:
-        num_v: A int, Number of vertexes
-        want: A list, Type graphs which want to generate
-
-    Returns:
-        A: A ndarray, Adjacency matrix
-        Atld: A ndarray, Normalized adjacency matrix
-        X: A ndarray, Nodes Features (identity matrix)
-        rgi: A int, Random graph index
-    """
-    w_sum = sum(want)
-    want = [sum(want[:i]) if want[i] == 1 else -1 for i in range(len(want))]
-    rgi = np.random.randint(0, w_sum)
-    if rgi == want[0]:
-        g = nx.cycle_graph(num_v)
-    elif rgi == want[1]:
-        g = nx.star_graph(num_v - 1)
-    elif rgi == want[2]:
-        g = nx.wheel_graph(num_v)
-    elif rgi == want[3]:
-        g = nx.complete_graph(num_v)
-    elif rgi == want[4]:
-        path_len = np.random.randint(2, num_v // 2)
-        g = nx.lollipop_graph(m=num_v - path_len, n=path_len)
-    elif rgi == want[5]:
-        g = nx.hypercube_graph(np.log2(num_v).astype('int'))
-        g = nx.convert_node_labels_to_integers(g)
-    elif rgi == want[6]:
-        g = nx.circular_ladder_graph(num_v // 2)
-    elif rgi == want[7]:
-        n_rows = np.random.randint(2, num_v // 2)
-        n_cols = num_v // n_rows
-        g = nx.grid_graph([n_rows, n_cols])
-        g = nx.convert_node_labels_to_integers(g)
-
-    A = nx.adjacency_matrix(g)
-    Atld = renormalization(A)
-    X = np.eye(A.shape[0])
-    return A, Atld, X, rgi
-
-
 def numpy_to_mega_batch(X:list, A:list):
     """
     Args:
@@ -196,7 +122,7 @@ def numpy_to_mega_batch(X:list, A:list):
         mega_batch_X.append(x)
     mega_batch_A = np.array(mega_batch_A)
     mega_batch_X = np.stack(mega_batch_X, axis=0)
-    return  mega_batch_X, mega_batch_A
+    return mega_batch_X, mega_batch_A
 
 
 def numpy_to_disjoint(X:list, A:list):
@@ -228,6 +154,7 @@ def numpy_to_disjoint(X:list, A:list):
         disjoint_A = np.concatenate([disjoint_A, a], axis=0)
     disjoint_X = np.stack(X,axis=0)
     return  disjoint_X, disjoint_A
+
 
 def gen_nx_graphs(batch=100, want=[1, 1, 1, 1, 1, 1, 1, 1], minN=6, maxN=10):
     while True:

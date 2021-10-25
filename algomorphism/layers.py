@@ -21,6 +21,7 @@ class FC(tf.Module):
         x = self.activation(x)
         return x
 
+
 class GCN(tf.Module):
     def __init__(self, in_features, out_features, activation=None, name=None):
         if name is None:
@@ -64,7 +65,7 @@ class IP(tf.Module):
 
 
 class Attention(tf.keras.layers.Layer):
-    def __init__(self, units, comp_sum=False):
+    def __init__(self, units):
         super(Attention, self).__init__(name='attention')
 
         self.fc = Dense(units, activation='tanh')
@@ -84,7 +85,7 @@ class Attention(tf.keras.layers.Layer):
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
-    def __init__(self, units, comp_sum=False):
+    def __init__(self, units):
         super(BahdanauAttention, self).__init__(name='bahdanau_attention')
 
         self.W1 = Dense(units)
@@ -110,7 +111,7 @@ class LSTM_At(tf.keras.layers.Layer):
         self.lstm1 = LSTM(units, return_sequences=True, batch_input_shape=batch_input_shape)
         self.at1 = Attention(units)
 
-    def call(self, inpt, comp_sum=False):
+    def call(self, inpt):
         x = self.lstm1(inpt)
         y = self.at1(x)
 

@@ -39,6 +39,7 @@ setup(
         'tensorflow',
         'scikit-learn',
         'numpy',
+        'networkx',
         'matplotlib',
     ],
     # test_suite='nose.collector',

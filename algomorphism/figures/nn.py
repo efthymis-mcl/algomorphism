@@ -2,10 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mlb
 
-import algomorphism.base
 
-
-def pca_denoising_figure(pca_vl, pca_ts, pca_emb, knn_pca, zlabels, pca_emb_idxs=[0, 1, 2], save_obj=None):
+def pca_denoising_figure(pca_vl, pca_ts, pca_emb, knn_pca, zlabels, pca_emb_idxs, save_obj=None):
     """
     Draw the knn_pca spaces, plot target embeddings, predicted validation (seen) embeddings and test (unseen) embeddings.
 
@@ -71,28 +69,33 @@ def multiple_models_history_figure(nn_models: list, figsize=(16, 8), legend_font
         save_obj: A list, list of path and name of saving figure.
 
     """
-    zstype = lambda ksplit0: '(seen)' if ksplit0 in ['train', 'val'] else '(unseen)'
+
+    # post feature
+    # zstype = lambda ksplit0: '(seen)' if ksplit0 in ['train', 'val'] else '(unseen)'
 
     def score_cost_plot(history, nn_model_name, plot_type='cost'):
         for k, hasv in hasattr_list:
             ksplit = k.split('_')
             if hasv and ksplit[1] == plot_type:
-                zs = zstype(ksplit[0])
+                # post feature
+                # zs = zstype(ksplit[0])
                 klabel = ' \, '.join(ksplit)
-                label = '{} \, {}'.format(klabel, zs)
-                plt.plot(history[k], label=r'${}: \,{}$'.format(nn_model_name, label))
+                # post feature
+                # label = '{} \, {}'.format(klabel, zs)
+                plt.plot(history[k], label=r'${}: \,{}$'.format(nn_model_name, klabel))
 
-        if plot_type == 'score':
-            try:
-                max_harm = np.max(history["harmonic_score"])
-                max_harm_arg = np.argmax(history["harmonic_score"])
-                plt.plot(max_harm_arg, max_harm, '*', label=r'$harmonic \, score \, (best)$', markersize=15,
-                         color='tab:purple')
-                print('Harmonic Score (Best): {}'.format(max_harm))
-                print('Val Score (Hs Best):', history["val_score"][max_harm_arg])
-                print('Test Score (Hs Best):', history["test_score"][max_harm_arg])
-            except:
-                pass
+        # post feature
+        # if plot_type == 'score':
+        #     try:
+        #         max_harm = np.max(history["harmonic_score"])
+        #         max_harm_arg = np.argmax(history["harmonic_score"])
+        #         plt.plot(max_harm_arg, max_harm, '*', label=r'$harmonic \, score \, (best)$', markersize=15,
+        #                  color='tab:purple')
+        #         print('Harmonic Score (Best): {}'.format(max_harm))
+        #         print('Val Score (Hs Best):', history["val_score"][max_harm_arg])
+        #         print('Test Score (Hs Best):', history["test_score"][max_harm_arg])
+        #     except:
+        #         pass
 
         plt.xlabel(r"$\# \, of \, epochs$", fontsize=axes_label_fondsize)
         plt.ylabel(r'${}$'.format(plot_type), fontsize=axes_label_fondsize)

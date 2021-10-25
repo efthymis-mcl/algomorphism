@@ -72,7 +72,6 @@ import algomorphism as am
 import tensorflow as tf
 
 
-
 class FeedForward(tf.Module, am.base.BaseNeuralNetwork):
     def __init__(self):
         tf.Module.__init__(self, name='feedforward')
@@ -94,4 +93,5 @@ class FeedForward(tf.Module, am.base.BaseNeuralNetwork):
       y = self.out(x)
       
       return tuple((y,))
+
 ```

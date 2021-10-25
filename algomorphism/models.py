@@ -78,14 +78,14 @@ class Knn(object):
 
 
 class GCNwithDepth(tf.Module, BaseNeuralNetwork):
-    def __init__(self, nf0, nc, depth=1, nfi=64):
-        tf.Module.__init__(self, name='my_gcn')
+    def __init__(self, nf0, nc, depth=1, nfi=64, learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None, name='gcn'):
+        tf.Module.__init__(self, name=name)
         status = [
             [0],
             [0],
             [1, 2]
         ]
-        BaseNeuralNetwork.__init__(self, status, learning_rate=1e-2)
+        BaseNeuralNetwork.__init__(self, status, learning_rate=learning_rate, clip_norm=clip_norm, early_stop_vars=early_stop_vars)
         self.depth = depth
 
         self.score_mtr = MetricBase(self,
@@ -106,10 +106,6 @@ class GCNwithDepth(tf.Module, BaseNeuralNetwork):
                                   )
         depthi = '1'
         setattr(self, 'gcn{}'.format(depthi), GCN(nf0, nfi, 'relu'))
-        if self.depth > 1:
-            l = 0.3 / (self.depth - 1)
-        else:
-            l = 1
         for d in range(1, self.depth):
             depthi = str(d + 1)
             setattr(self, 'gcn{}'.format(depthi), GCN(nfi, nfi, 'relu'))
