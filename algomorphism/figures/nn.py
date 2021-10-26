@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -72,35 +74,56 @@ def multiple_models_history_figure(nn_models: list, figsize=(16, 8), legend_font
         save_obj: A list, list of path and name of saving figure.
 
     """
-    def score_cost_plot(history:dict, nn_model_name:str, plot_type='cost'):
-        for key, v in history.items():
-            key_split = key.split('_')
-            if any(v) and plot_type in key_split:
-                epoch_v = [k for k in v.keys()]
-                score_cost_v = [value for value in v.values()]
-                if plot_type != 'harmonic':
-                    key_split.remove(plot_type)
-                label = ' \, '.join(key_split)
-                plt.plot(epoch_v, score_cost_v, label=r'${}: \,{}$'.format(nn_model_name, label))
+    def find_sub_word_from_history_keys(param, sub_word):
+        sub_words = [sub_word if any(param.values()) else None for word in param.keys() for sub_word in word.split('_')]
+        if sub_word in sub_words:
+            return sub_word
+        else:
+            return None
 
-        plt.xlabel(r"$\# \, of \, epochs$", fontsize=axes_label_fondsize)
-        plt.ylabel(r'${}$'.format(plot_type), fontsize=axes_label_fondsize)
-        plt.legend(fontsize=legend_fontsize)
-        plt.xticks(fontsize=ticks_fontsize)
-        plt.yticks(fontsize=ticks_fontsize)
-
-    plt.figure(figsize=figsize)
+    plot_idx_dict = {
+        'cost': 1,
+        'score': 2,
+        'harmonic': 2
+    }
+    ylabel_idx_dict = {
+        1: 'cost',
+        2: 'score',
+    }
+    max_n_plots = 0
     for nn_model in nn_models:
-        plt.subplot(1, 2, 1)
-        score_cost_plot(nn_model.history, nn_model.name, 'cost')
-        plt.subplot(1, 2, 2)
-        score_cost_plot(nn_model.history, nn_model.name, 'score')
-        score_cost_plot(nn_model.history, nn_model.name, 'harmonic')
+        for k, v in plot_idx_dict.items():
+            sub_word_h_key = find_sub_word_from_history_keys(nn_model.history, k)
+            if sub_word_h_key is not None:
+                if max_n_plots < v:
+                    max_n_plots = v
 
-    if save_obj is not None:
-        plt.savefig('{}/{}.eps'.format(*save_obj), format='eps')
-    else:
-        plt.show()
+    if max_n_plots > 0:
+        plt.figure(figsize=figsize)
+        for nn_model in nn_models:
+            for k, v in nn_model.history.items():
+                if any(v):
+                    k_split = k.split('_')
+                    for ks in k_split:
+                        plt_idx = plot_idx_dict.get(ks)
+                        if plt_idx is not None:
+                            plt.subplot(1, max_n_plots, plt_idx)
+                            klabel = copy.deepcopy(k_split)
+                            if ks != 'harmonic':
+                                klabel.remove(ylabel_idx_dict[plt_idx])
+                            klabel = '$\,$'.join(klabel)
+                            plt.plot(v.keys(), v.values(), label='{}: {}'.format(nn_model.name, klabel))
+
+                            plt.xlabel(r"$\# \, of \, epochs$", fontsize=axes_label_fondsize)
+                            plt.ylabel(r'${}$'.format(ylabel_idx_dict[plt_idx]), fontsize=axes_label_fondsize)
+                            plt.legend(fontsize=legend_fontsize)
+                            plt.xticks(fontsize=ticks_fontsize)
+                            plt.yticks(fontsize=ticks_fontsize)
+                            break
+        if save_obj is not None:
+            plt.savefig('{}/{}.eps'.format(*save_obj), format='eps')
+        else:
+            plt.show()
 
 
 # def print_confmtx(model, dataset, lerninfo: str, indexes_list: list):
