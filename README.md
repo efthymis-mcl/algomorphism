@@ -71,9 +71,12 @@ status = [
 import algomorphism as am
 import tensorflow as tf
 
+# ...
+# Here create dataset obj
+# dataset = ...
 
 class FeedForward(tf.Module, am.base.BaseNeuralNetwork):
-    def __init__(self):
+    def __init__(self, dataset):
         tf.Module.__init__(self, name='feedforward')
         
         status = [
@@ -81,7 +84,26 @@ class FeedForward(tf.Module, am.base.BaseNeuralNetwork):
           [1, 2]
         ]
         
-        am.base.BaseNeuralNetwork.__init__(status)
+        self.score_mtr = am.base.MetricBase(self,
+        #                                   [ScoreMetricObject()],
+                                            status=status,
+                                            mtr_select=[0]
+        )
+        
+        self.cost_mtr = am.base.MetricBase(self,
+        #                                   [CostMetricObject()],
+                                            status=status,
+                                            mtr_select=[0],
+                                            status_out_type=1
+        )
+
+        self.cost_loss = am.base.LossBase(self,
+        #                                   [CostLossObject()],
+                                            status=status,
+                                            loss_select=[0]
+        )
+        
+        am.base.BaseNeuralNetwork.__init__(status, dataset=dataset)
         
         self.fc1 = am.layers.FC(4, 16)
         self.fc2 = am.layers.FC(16, 32)
