@@ -6,7 +6,7 @@ from algomorphism.layers import GCN, IP, FC
 
 
 class MiniGAE(tf.Module, BaseNeuralNetwork):
-    def __init__(self, ft_number, w_p, norm=1, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
+    def __init__(self, dataset, ft_number, w_p, norm=1, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
                  learning_rate=1e-2):
         tf.Module.__init__(self, name='gae')
         status = [
@@ -14,7 +14,6 @@ class MiniGAE(tf.Module, BaseNeuralNetwork):
             [0],
             [1, 2]
         ]
-        BaseNeuralNetwork.__init__(self, status, early_stop_vars, weights_outfile, optimizer, learning_rate)
 
         self.cost_mtr = MetricBase(self,
                                    [mWCEL(w_p, norm)],
@@ -35,6 +34,8 @@ class MiniGAE(tf.Module, BaseNeuralNetwork):
                                   status,
                                   [0]
                                   )
+
+        BaseNeuralNetwork.__init__(self, status, dataset, early_stop_vars, weights_outfile, optimizer, learning_rate)
 
         self.gcn1 = GCN(ft_number, 16, "relu", "gcn1")
         self.gcn2 = GCN(16, 32, name="gcn2")
@@ -78,14 +79,16 @@ class Knn(object):
 
 
 class GCNwithDepth(tf.Module, BaseNeuralNetwork):
-    def __init__(self, nf0, nc, depth=1, nfi=64, learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None, name='gcn'):
+    def __init__(self, dataset, nf0, nc, depth=1, nfi=64, learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None,
+                 name='gcn'):
+
         tf.Module.__init__(self, name=name)
         status = [
             [0],
             [0],
             [1, 2]
         ]
-        BaseNeuralNetwork.__init__(self, status, learning_rate=learning_rate, clip_norm=clip_norm, early_stop_vars=early_stop_vars)
+
         self.depth = depth
 
         self.score_mtr = MetricBase(self,
@@ -104,6 +107,9 @@ class GCNwithDepth(tf.Module, BaseNeuralNetwork):
                                   status,
                                   [0]
                                   )
+
+        BaseNeuralNetwork.__init__(self, status, dataset=dataset,
+                                   learning_rate=learning_rate, clip_norm=clip_norm, early_stop_vars=early_stop_vars)
         depthi = '1'
         setattr(self, 'gcn{}'.format(depthi), GCN(nf0, nfi, 'relu'))
         for d in range(1, self.depth):
@@ -126,6 +132,3 @@ class GCNwithDepth(tf.Module, BaseNeuralNetwork):
         y = self.out(x)
         y = tuple([y])
         return y
-
-    def set_knn_out(self, knn_out):
-        pass

@@ -266,7 +266,7 @@ class EarlyStopping(object):
         """
         if len(h[self.es_metric]) > 0:
             if self.es_strategy is not None and self.es_metric is not None:
-                sub_h = h[self.es_metric]
+                sub_h = list(h[self.es_metric].values())
                 if self.es_strategy == 'first_drop':
                     if sub_h[-1] > self.__metric_max:
                         self.__metric_max = sub_h[-1]
@@ -294,15 +294,14 @@ class History(object):
     """
 
     """
-    def __init__(self, dataset, score_mtr_atr=None):
+    def __init__(self, dataset):
         """
 
         Args:
             dataset:
-            score_mtr_atr:
         """
         dataset_attrs = self.__get_dataset_atr(dataset)
-        self.history = self.__set_up_history(dataset_attrs, score_mtr_atr)
+        self.history = self.__set_up_history(dataset_attrs)
         self.__harmonic_score = lambda seen, unseen: 2*seen*unseen/(seen + unseen)
 
     @staticmethod
@@ -331,19 +330,17 @@ class History(object):
             dataset_attr = append_atr(dataset_attr, ex_type)
         return dataset_attr
 
-    @staticmethod
-    def __set_up_history(dataset_attrs, score_mtr_atr):
+    def __set_up_history(self, dataset_attrs):
         """
 
         Args:
             dataset_attrs:
-            score_mtr_atr:
 
         Returns:
 
         """
         mtrs_attr = ['cost']
-        if score_mtr_atr == 'score':
+        if hasattr(self, 'score_mtr'):
             mtrs_attr.append('score')
 
         history = {}
@@ -435,7 +432,7 @@ class Trainer(History):
       __early_stop: A dict, early stopping attributes on dictionary. Default is None.
     """
 
-    def __init__(self, dataset, score_mtr_atr=None, early_stop_vars=None, save_weights_obj=None, optimizer="SGD", learning_rate=1e-4,
+    def __init__(self, dataset, early_stop_vars=None, save_weights_obj=None, optimizer="SGD", learning_rate=1e-4,
                  clip_norm=0.0):
         """
         Args:
@@ -445,7 +442,7 @@ class Trainer(History):
           learning_rate: A float (optional), learning rate of optimizer. Default is 1e-4,
           clip_norm: A float (optional). Default is 0.0 .
         """
-        super(Trainer, self).__init__(dataset, score_mtr_atr)
+        super(Trainer, self).__init__(dataset)
 
         if optimizer == "SGD":
             self.__optimizer = SGD(learning_rate, momentum=0.98)
@@ -523,8 +520,8 @@ class BaseNeuralNetwork(Trainer):
       __score_mode: A bool, this boolean have use of switch the mode of zero shot nn model output (categorical (score) 'True' or vector 'False').
     """
 
-    def __init__(self, status, dataset, score_mtr_atr=None, early_stop_vars=None, weights_outfile=None, optimizer="SGD", learning_rate=1e-4,
-                 clip_norm=0.0):
+    def __init__(self, status, dataset, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
+                 learning_rate=1e-4, clip_norm=0.0):
         """
         Args:
           status: A list, a nested list for input/output of model (see MetricLossBase for details),
@@ -538,7 +535,7 @@ class BaseNeuralNetwork(Trainer):
         if weights_outfile is not None:
             save_weights_obj = partial(self.save_weights,
                                        "{}/weights/weights_best_{}.tf".format(weights_outfile[0], weights_outfile[1]))
-        super(BaseNeuralNetwork, self).__init__(dataset, score_mtr_atr, early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
+        super(BaseNeuralNetwork, self).__init__(dataset, early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
 
         self.__status = status
         self.__score_mode = False
