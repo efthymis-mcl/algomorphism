@@ -23,6 +23,7 @@ class WeightedCrossEntropyWithLogits(object):
     def __call__(self, y_true, y_pred):
         """
         Call function.
+
         Args:
             y_true: A tf_tensor, the true examples,
             y_pred: A tf_tensor, the predicted output of neural network.
@@ -108,6 +109,7 @@ class CategoricalCrossEntropyWithLambda(object):
     def set_lambda(self, lamda):
         """
         Lambda setter.
+
         Args:
             lamda: a float, new lambda parameter.
         """

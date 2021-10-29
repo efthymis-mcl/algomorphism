@@ -103,14 +103,15 @@ def pca_denoising_preprocessing(model, dataset, Z, Y, pca_emb_idxs, embidx=0):
     return pca_vl_s, pca_ts_s, pca_vl_u, pca_ts_u, pca_emb, knn_pca
 
 
-def n_identity_matrix(N):
+def three_d_identity_matrix(n):
     """
     Return a 3D identity matrix.
+
     Args:
-        N: A int, size of 3d matrix.
+        n: A int, size of 3d matrix.
 
     Returns:
         A tf_tensor, 3D identity matrix.
     """
-    return tf.cast([[[1 if i == j and j == w else 0 for i in range(N)] for j in range(N)] for w in range(N)],
+    return tf.cast([[[1 if i == j and j == w else 0 for i in range(n)] for j in range(n)] for w in range(n)],
                    tf.float32)

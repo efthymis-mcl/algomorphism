@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 import random
 import math
-from algomorphism.datasets import GraphBaseDataset
+from algomorphism.datasets import GraphBaseDataset, SeenUnseenBase
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
@@ -10,12 +10,51 @@ import tensorflow as tf
 
 # Classification task
 class SimpleGraphsDataset(GraphBaseDataset):
+    """
+    Get disjoint matrix of a given number of graphs with random range $[min_nn, max_nn]$. The outcome is disjoint
+    matrix created by random uncycle graph. Default graph types:
+        - cycle,
+        - star,
+        - wheel,
+        - complete,
+        - lollipop
+        - hypercube
+        - circular_ladder,
+        - grid.
 
-    def __init__(self, n_data, min_n_nodes, max_n_nodes, graph_types):
+    Attributes:
+        __n_data: number of generated graphs.
+        __min_n_nodes: the minimum number of vertices.
+        __max_n_nodes: the maximum number of vertices.
+        __all_graph_types: types of available graphs. list of graphs.
+        __graph_types: types of graphs to be generated. Default is None.
+
+    Examples:
+        >>> n_data = 100
+        >>> min_n_nodes = 10
+        >>> max_n_nodes = 20
+        >>> graph_types = ['cycle', 'star']
+        >>> dataset = SimpleGraphsDataset(n_data, min_n_nodes, max_n_nodes, graph_types)
+        >>> dataset.generate_dataset(
+        ...     train_per=0.7,
+        ...     val_per=0.2,
+        ...     test_per=0.1)
+    """
+    def __init__(self, n_data: int, min_n_nodes: int, max_n_nodes: int, graph_types: list = None):
+        """
+        Args:
+            n_data: number of generated graphs.
+            min_n_nodes: the minimum number of nodes.
+            max_n_nodes: the maximum number of nodes.
+            graph_types: types of graphs to be generated. Default `__all_graphs`:
+        """
         super(SimpleGraphsDataset, self).__init__()
 
         self.__all_graph_types = ['cycle', 'star', 'wheel', 'complete', 'lollipop',
                                   'hypercube', 'circular_ladder', 'grid']
+
+        if graph_types is None:
+            graph_types = self.__all_graph_types
 
         self.__n_data = n_data
         self.__graph_types = graph_types
@@ -26,6 +65,13 @@ class SimpleGraphsDataset(GraphBaseDataset):
             assert graph_type in self.__all_graph_types, 'type {} is not included'.format(graph_type)
 
     def generate_dataset(self, train_per=0.8, val_per=0.1, test_per=0.1):
+        """
+
+        Args:
+            train_per: A float, percentage of train examples.
+            val_per: A float, percentage of validation examples.
+            test_per: A float, percentage of test examples.
+        """
         a, atld, x, label_list = self.__generate_data()
 
         self.__lb = LabelBinarizer()
@@ -143,12 +189,6 @@ class SimpleGraphsDataset(GraphBaseDataset):
             g = nx.convert_node_labels_to_integers(g)
 
         return g, graph_label
-
-
-class SeenUnseenBase(object):
-    def __init__(self, seen, unseen):
-        self.seen = seen
-        self.unseen = unseen
 
 
 # Zero Shot Learning task
@@ -305,3 +345,49 @@ class BubbleDataset(object):
                 tf.cast(y_test_unseen, tf.float32),
             )).batch(128)
         )
+
+
+class UncycleGraphExamples(GraphBaseDataset):
+    """
+    Generate examples of uncycle graphs.
+
+    Examples:
+        >>> n_data = 100
+        >>> min_n_nodes = 12
+        >>> max_n_nodes = 24
+        >>> min_n_edges = 25
+        >>> max_n_edges = 50
+        >>> uge = UncycleGraphExamples(n_data, min_n_nodes, max_n_nodes, min_n_edges, max_n_edges)
+
+    """
+    def __init__(self, n_data, min_n_nodes, max_n_nodes, min_n_edges, max_n_edges):
+        super(UncycleGraphExamples, self).__init__()
+        a_list = []
+        atld_list = []
+        max_d = 0
+        for _ in range(n_data):
+            n_nodes = random.randint(min_n_nodes, max_n_nodes)
+            n_edges = random.randint(min_n_edges, max_n_edges)
+            g = self.__graph_generator(n_nodes, n_edges)
+
+            a = nx.adjacency_matrix(g).toarray()
+            atld = self.renormalization(a)
+            a_list.append(a)
+            atld_list.append(atld)
+            if max_d < a.shape[0]:
+                max_d = a.shape[0]
+
+        x_list = [np.eye(max_d) for _ in range(len(a_list))]
+        self.x, self.a = self.numpy_to_mega_batch(x_list, a_list)
+        _, self.atld = self.numpy_to_mega_batch(x_list, atld_list)
+
+    @staticmethod
+    def __graph_generator(n_nodes, n_edges):
+        g = nx.generators.random_graphs.dense_gnm_random_graph(n_nodes, n_edges)
+        while True:
+            try:
+                edges = nx.cycles.find_cycle(g)
+            except:
+                break
+            g.remove_edge(*edges[0])
+        return g

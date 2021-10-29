@@ -15,10 +15,10 @@ class WeightedCrossEntropyWithLogits(Metric):
 
     def __init__(self, w_p, norm):
         """
-    Args:
-      w_p: A float, weight of loss (weighted cross entropy),
-      norm: A float, normalization parameter.
-    """
+        Args:
+            w_p: A float, weight of loss (weighted cross entropy),
+            norm: A float, normalization parameter.
+        """
         super(WeightedCrossEntropyWithLogits, self).__init__(name='weighted_cross_entropy_with_logits')
         self.__loss = partial(tf.nn.weighted_cross_entropy_with_logits, pos_weight=w_p)
         self.__norm = norm
@@ -171,8 +171,9 @@ class CategoricalCrossEntropyWithLambda(Metric):
     def set_lambda(self, lamda: float):
         """
         Lambda setter.
-            Args:
-                lamda: A float, new lambda
+
+        Args:
+            lamda: A float, new lambda
         """
 
         self.__lambda = lamda

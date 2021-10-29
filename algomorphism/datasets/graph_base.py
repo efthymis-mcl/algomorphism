@@ -1,28 +1,26 @@
-from typing import Tuple
-
+from typing import List
 import numpy as np
 
 
 class GraphBaseDataset(object):
-    def __init__(self):
+    def __int__(self):
         pass
 
     @staticmethod
-    def numpy_to_mega_batch(X: list, A: list):
+    def numpy_to_mega_batch(x_list, a_list):
         """
-        List of numpy arrays to mega batch array
+        List of numpy arrays to mega batch array.
+
         Args:
-            X: A list, list of feature matrixes,
-            A: A list, list of adjency matrixes.
-
+            x_list (`list[np.ndarray]`): feature matrixes.
+            a_list (`list[np.ndarray]`): adjency matrixes.
         Returns:
-            mega_batch_X: A ndarray, batched feature matrixes,
-            mega_batch_A: A ndarray, batched adjency matrixes.
-
+            `tuple[np.ndarray, np.ndarray]`: batched x, a lists
         Examples:
+
             >>> graph_base = GraphBaseDataset()
-            >>> x = [np.random.rand(6,4) for _ in range(6)]+[np.random.rand(3,4) for _ in range(6)]
-            >>> a = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
+            >>> x_list = [np.random.rand(6,4) for _ in range(6)]+[np.random.rand(3,4) for _ in range(6)]
+            >>> a_list = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
             >>> x, a = graph_base.numpy_to_mega_batch(x,a)
             >>> print(a.shape)
             (12, 6, 6)
@@ -32,32 +30,70 @@ class GraphBaseDataset(object):
 
         def a_post_concat(a):
             a_con = np.concatenate([a, np.zeros((a.shape[0], max_d - a.shape[1]))], axis=1)
-            a_con = np.concatenate([a_con, np.zeros((max_d - a_con.shape[0], a_con.shape[1]))],
-                                   axis=0)
+            a_con = np.concatenate([a_con, np.zeros((max_d - a_con.shape[0], a_con.shape[1]))], axis=0)
             return a_con
 
         def x_post_concat(x):
             x_con = np.concatenate([x, np.zeros((max_d - x.shape[0], x.shape[1]))], axis=0)
             return x_con
 
-        max_d = max([a.shape[0] for a in A])
-        mega_batch_A = []
-        mega_batch_X = []
-        for (x, a) in zip(X, A):
+        max_d = max([a.shape[0] for a in a_list])
+        mega_batch_a = []
+        mega_batch_x = []
+        for (x, a) in zip(x_list, a_list):
             if a.shape[0] < max_d:
                 a = a_post_concat(a)
                 x = x_post_concat(x)
-            mega_batch_A.append(a)
-            mega_batch_X.append(x)
-        mega_batch_A = np.array(mega_batch_A)
-        mega_batch_X = np.stack(mega_batch_X, axis=0)
+            mega_batch_a.append(a)
+            mega_batch_x.append(x)
+        mega_batch_a = np.array(mega_batch_a)
+        mega_batch_x = np.stack(mega_batch_x, axis=0)
 
-        return mega_batch_X, mega_batch_A
+        return mega_batch_x, mega_batch_a
+
+    @staticmethod
+    def numpy_to_disjoint(x_list, a_list):
+        """
+        Args:
+            x_list (`List[np.ndarray]`): feature matrixes,
+            a_list (`List[np.ndarray]`): adajence matrixes.
+
+        Returns:
+            `tuple[np.ndarray, np.ndarray]`: disjoint matrixes of x_list, a_list.
+
+        Examples:
+            >>> x_list = [np.random.rand(6,4) for _ in range(6)]+[np.random.rand(3,4) for _ in range(6)]
+            >>> a_list = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
+            >>> gbd = GraphBaseDataset()
+            >>> x, a = gbd.numpy_to_disjoint(x_list,a_list)
+            >>> print(a.shape)
+            (54, 54)
+            >>> print(x.shape)
+            (54, 48)
+        """
+        disjoint_a = a_list[0]
+        disjoint_x = x_list[0]
+        for a, x in zip(a_list[1:], x_list[1:]):
+            na = a.shape[1]
+            nda = disjoint_a.shape[1]
+            nx = x.shape[1]
+            ndx = disjoint_x.shape[1]
+
+            disjoint_a = np.concatenate([disjoint_a, np.zeros((disjoint_a.shape[0], na))], axis=1)
+            a = np.concatenate([np.zeros((a.shape[0], nda)), a], axis=1)
+            disjoint_a = np.concatenate([disjoint_a, a], axis=0)
+
+            disjoint_x = np.concatenate([disjoint_x, np.zeros((disjoint_x.shape[0], nx))], axis=1)
+            x = np.concatenate([np.zeros((x.shape[0], ndx)), x], axis=1)
+            disjoint_x = np.concatenate([disjoint_x, x], axis=0)
+
+        return disjoint_x, disjoint_a
 
     @staticmethod
     def renormalization(a):
         """
         Give an adjacency matrix and returns the renormalized.
+
         Args:
             a: A ndarray, adjacency matrix.
 
@@ -87,3 +123,5 @@ class GraphBaseDataset(object):
         atld = np.matmul(degree_inv, ai)
         atld = np.matmul(atld, degree_inv)
         return atld
+
+

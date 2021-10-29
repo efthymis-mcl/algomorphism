@@ -1,282 +1,70 @@
 import numpy as np
 import networkx as nx
-from networkx import Graph, adjacency_matrix
-import tensorflow as tf
-from typing import Union
+from typing import Union, List, Tuple
+from algomorphism.datasets import GraphBaseDataset
 
 
-def a2g(A):
+def vertexes_to_adjacency(vertexes):
+    """
+
+    Args:
+        vertexes (`Union[List[List[int]], List[tuple], Tuple[list], Tuple[tuple]]`): vertexes.
+
+    Returns:
+        `np.ndarray`: adjacency matrix.
+
+    Examples:
+          >>> vrtxs = [[0,1], [1,2], [1,3], [1,4], [1,5]]
+          >>> a = vertexes_to_adjacency(vrtxs)
+          >>> print(a.shape)
+          (6, 6)
+          >>> print(a)
+          [[0. 1. 0. 0. 0. 0.]
+           [1. 0. 1. 1. 1. 1.]
+           [0. 1. 0. 0. 0. 0.]
+           [0. 1. 0. 0. 0. 0.]
+           [0. 1. 0. 0. 0. 0.]
+           [0. 1. 0. 0. 0. 0.]]
+          >>> vrtxs = [[0,1], [2,2], [4,1], [2,4]]
+          >>> a = vertexes_to_adjacency(vrtxs)
+          >>> print(a.shape)
+          (4, 4)
+          >>> print(a)
+          [[0. 1. 0. 0.]
+           [1. 0. 0. 1.]
+           [0. 0. 1. 1.]
+           [0. 1. 1. 0.]]
+    """
+    v_flat = [vij for vi in vertexes for vij in vi]
+    nodes = list(set(v_flat))
+    n = len(nodes)
+    a = np.zeros((n, n))
+    for element_i in nodes:
+        i = nodes.index(element_i)
+        for element_j in nodes:
+            j = nodes.index(element_j)
+            if [element_i, element_j] in vertexes or [element_j, element_i] in vertexes:
+                a[i, j] = 1.0
+    return a
+
+def a2g(a: np.ndarray):
     """
     Adjacency matrix to graph object.
+
     Args:
-        A: A ndarray, binary adjacency matrix.
+        a: A ndarray, binary adjacency matrix.
 
     Returns:
         g: A nxgraph, networkx graph object.
     """
     g = nx.Graph()
-    a = np.where(A == 1)
+    a = np.where(a == 1)
     a = [[x, y] for x, y in zip(a[0], a[1])]
     g.add_edges_from(a)
     return g
 
 
-def random_uncycle_graph(num_v:int):
-    """
-    Given a number of vertices returns a random uncycle graph with range of vertices: [number_of_vertices, 2 * number_of_vertices].
-    Args:
-        num_v: A int, number of vertices
-
-    Returns:
-        A: A ndarray, adjacency matrix of random uncycle graph,
-        Atld: A ndarray, normilized (Laplacian normalization) adjacency matrix of $A$,
-        X: A ndarray, feature matrix, same size as $A$.
-    """
-    g = nx.generators.random_graphs.dense_gnm_random_graph(num_v, num_v * 2)
-    while True:
-        try:
-            edges = nx.cycles.find_cycle(g)
-        except:
-            break
-        g.remove_edge(*edges[0])
-    A = nx.adjacency_matrix(g).toarray()
-    Atld = renormalization(A)
-    X = np.eye(A.shape[1])
-    X = X.reshape(X.shape[0], 1)
-    return A, Atld, X
-
-
-def gen_batch_graphs(n_graphs=500, min_nv=5, max_nv=8):
-    """
-    Get disjoint matrix of a given number of graphs with random range [$min_nv$, $max_nv$]. The outcome is disjoint matrix
-    created by random uncycle graph.
-
-    Args:
-        n_graphs: A int (optional), number of generated graphs. Default is 500.
-        min_nv: A int (optional), the minimum number of vertices. Default is 5.
-        max_nv: A int (optional), the maximum number of vertices. Default is 8.
-
-    Returns:
-        A: A ndarray, disjoint adjacency matrix
-        Atld: A ndarray, renormalized disjoint adjacency matrix of $A$.
-        X: A ndarray, identity matrix. Same size as $A$.
-    """
-    while True:
-        Atld_list = []
-        A_list = []
-        X_list = []
-        gen_v = np.random.randint(min_nv, max_nv, n_graphs)
-        for num_v in gen_v:
-            A, Atld, X = random_uncycle_graph(num_v)
-            A_list.append(A)
-            Atld_list.append(Atld)
-            X_list.append(X)
-        X, A, I = numpy_to_disjoint(X_list, A_list)
-        _, Atld, _ = numpy_to_disjoint(X_list, Atld_list)
-        A = A.toarray()
-        Atld = Atld.toarray()
-        yield A, Atld, X
-
-
-def numpy_to_mega_batch(X:list, A:list):
-    """
-    Args:
-        X: A list, list of feature matrixes,
-        A: A list, list of adjency matrixes.
-    Examples:
-        >>> X = [np.random.rand(6,4) for _ in range(12)]
-        >>> A = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
-        >>> X, A = numpy_to_mega_batch(X,A)
-        >>> print(A.shape)
-        (12, 6, 6)
-        >>> print(X.shape)
-        (12, 6, 4)
-    """
-    def post_concat(x):
-        """
-        Post concatenation at 1st and 2nd dimension of array.
-        Args:
-            x: A ndarray, minimum 3D array.
-
-        Returns:
-            x_con_post: A ndarray, post concatenation array. Minimum 3D array.
-
-        Examples:
-            >>> x = np.array([[[1,1], [2,2]]])
-            >>> x_con_post = post_concat(x)
-            >>> print(x_con_post)
-
-        """
-        x_con_post = np.concatenate([x, np.zeros((x.shape[0], max_d-x.shape[1]))], axis=1)
-        x_con_post = np.concatenate([x_con_post, np.zeros((max_d - x_con_post.shape[0], x_con_post.shape[1]))], axis=0)
-        return x_con_post
-
-    max_d = max([a.shape[0] for a in A])
-    mega_batch_A = []
-    mega_batch_X = []
-    for (x, a) in zip(X, A):
-        if a.shape[0] < max_d:
-            a = post_concat(a)
-            x = post_concat(x)
-        mega_batch_A.append(a)
-        mega_batch_X.append(x)
-    mega_batch_A = np.array(mega_batch_A)
-    mega_batch_X = np.stack(mega_batch_X, axis=0)
-    return mega_batch_X, mega_batch_A
-
-
-def numpy_to_disjoint(X:list, A:list):
-    """
-    Args:
-        X: a list, list of np feature matrixes,
-        A: a list, list of np adajence matrixes.
-
-    Returns:
-        disjoint_X: A ndarray, np disjont matrix of list of X argument,
-        disjoint_A: A ndarray, np disjont matrix of list of A argument.
-
-    Examples:
-        >>> X = [np.random.rand(6,4) for _ in range(12)]
-        >>> A = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
-        >>> X, A = numpy_to_disjoint(X,A)
-        >>> print(A.shape)
-        (54, 54)
-        >>> print(X.shape)
-        (12, 6, 4)
-    """
-    I = []
-    disjoint_A = A[0]
-    for a in A[1:]:
-        na = a.shape[1]
-        ndA = disjoint_A.shape[1]
-        disjoint_A = np.concatenate([disjoint_A, np.zeros((disjoint_A.shape[0], na))], axis=1)
-        a = np.concatenate([np.zeros(( a.shape[0], ndA)), a], axis=1)
-        disjoint_A = np.concatenate([disjoint_A, a], axis=0)
-    disjoint_X = np.stack(X,axis=0)
-    return  disjoint_X, disjoint_A
-
-
-def gen_nx_graphs(batch=100, want=[1, 1, 1, 1, 1, 1, 1, 1], minN=6, maxN=10):
-    while True:
-        Atld_list = []
-        A_list = []
-        X_list = []
-        C_list = []
-        gen_v = np.random.randint(minN, maxN, batch)
-        maxN = 0
-        for num_v in gen_v:
-            A, Atld, X, C = nx_graph(num_v, want)
-            if maxN < A.shape[0]:
-                maxN = A.shape[0]
-            A_list.append(A)
-
-            Atld_list.append(Atld)
-            X_list.append(X)
-
-            C_list.append(C)
-
-        for i in range(len(X_list)):
-            x = X_list[i]
-            left_pad = np.zeros((x.shape[0], maxN - x.shape[1]))
-            bottom_pad = np.zeros((maxN - x.shape[0], maxN))
-
-            x = np.concatenate([x, left_pad], axis=1)
-            x = np.concatenate([x, bottom_pad], axis=0)
-            X_list[i] = x
-
-        X, A = numpy_to_mega_batch(X_list, A_list)
-        _, Atld = numpy_to_mega_batch(X_list, Atld_list)
-        A = np.array(A)
-        Atld = np.array(Atld)
-        yield X, A, Atld, C_list
-
-
-def gen_nx_random_uncycle_graphs():
-    batch = 1000
-    while True:
-        Atld_list = []
-        A_list = []
-        X_list = []
-        gen_v = np.random.randint(5, 10, batch)
-        for num_v in gen_v:
-            r_choice = np.random.randint(2)
-            if r_choice == 0:
-                A, Atld, X = nx_graph(num_v)
-            else:
-                A, Atld, X = random_uncycle_graph(num_v)
-            A_list.append(A)
-            Atld_list.append(Atld)
-            X_list.append(X)
-
-        X, A = numpy_to_mega_batch(X_list, A_list)
-        _, Atld = numpy_to_mega_batch(X_list, Atld_list)
-        A = A.toarray()
-        Atld = Atld.toarray()
-        yield A, Atld, X
-
-
-def nodelist2graph(nodelist:list, maxN=None):
-    """
-    A list of sublist with numbering nodes of graph. Output is a tf_tensor of batch Adjacency matrix per graph.
-    Args:
-        nodelist: A list, nested list with nodes of the graphs,
-        maxN: An int (optional), max number of nodes or max size of Adjacency matrix. Default is None.
-
-    Returns:
-        X: A tf_tensor, feature matrix per graph,
-        A: A tf_tensor, Adjacency matrix per graph,
-        Atld: A tf_tensor, normalized Adjacency matrix.
-
-    Examples:
-        >>> node_list = [[[0,1], [1,2], [1,3], [1,4], [1,5]], [[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]]]
-        >>> X, A, Atld = nodelist2graph(node_list)
-        >>> print(X)
-        >>> print(A)
-        >>> print(Atld)
-    """
-    A_list = []
-    Atld_list = []
-    X_list = []
-
-    for elements in nodelist:
-        g = Graph(elements)
-        a = adjacency_matrix(g, sorted(g.nodes())).toarray()
-        a_tld = renormalization(a)
-        x = np.eye(a.shape[0])
-        A_list.append(a)
-        Atld_list.append(a_tld)
-        X_list.append(x)
-
-    X, A = numpy_to_mega_batch(X_list, A_list)
-    _, Atld = numpy_to_mega_batch(X_list, Atld_list)
-
-    X = tf.cast(X, tf.float32)
-    A = tf.cast(A, tf.float32)
-    Atld = tf.cast(Atld, tf.float32)
-
-    if maxN is None:
-        return X, A, Atld
-    elif maxN <= X.shape[1]:
-        X = X[:, :maxN, :maxN]
-        A = A[:, :maxN, :maxN]
-        Atld = Atld[:, :maxN, :maxN]
-        return X, A, Atld
-    else:
-        left_pad = tf.zeros((X.shape[0], X.shape[1], maxN - X.shape[2]))
-        bottom_pad = tf.zeros((X.shape[0], maxN - X.shape[1], maxN))
-
-        X = tf.concat([X, left_pad], axis=2)
-        X = tf.concat([X, bottom_pad], axis=1)
-
-        A = tf.concat([A, left_pad], axis=2)
-        A = tf.concat([A, bottom_pad], axis=1)
-
-        Atld = tf.concat([Atld, left_pad], axis=2)
-        Atld = tf.concat([Atld, bottom_pad], axis=1)
-        return X, A, Atld
-
-
-def graphs_stats(A: np.ndarray) -> Union[int, dict, dict, dict]:
+def graphs_stats(a: np.ndarray) -> Tuple[int, dict, dict, dict]:
     """
     Statistics about graph examples. Run bfs tree on every node on every graph getting the sortest path lengest per node
     (depth). After that mesure the max depth, depth distribution per depth observation, max depth distribution (geting
@@ -295,8 +83,8 @@ def graphs_stats(A: np.ndarray) -> Union[int, dict, dict, dict]:
     depth_dist = {}
     maxdepth_dist = {}
     edge_n = {}
-    for a in A:
-        g = a2g(a)
+    for ab in a:
+        g = a2g(ab)
         en = len(g.edges())
         if en not in edge_n.keys():
             edge_n[en] = 1

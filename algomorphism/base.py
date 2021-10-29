@@ -24,7 +24,7 @@ class MetricLossBase(object):
         """
 
         Args:
-            model:
+            model (`BaseNeuralNetwork`): model to parse loss call function.
         """
         if model is not None:
             if hasattr(model, 'call'):
@@ -34,13 +34,15 @@ class MetricLossBase(object):
 
     def predict_outputs(self, inputs, is_score=False, set_is_score=False):
         """
+        Predict outputs by `BaseNeuralNetwork` model.
+
         Args:
-            inputs:
-            is_score:
-            set_is_score:
+            inputs (`tuple`): inputs of model.
+            is_score (`bool`): check if compute score (this is useful for ZS learning).
+            set_is_score (`bool`): compute score (this is useful for ZS learning).
 
         Returns:
-            pred_outputs:
+            `tuple`: predicted outputs
         """
         if is_score:
             pred_outputs = self.__callfn(inputs, set_is_score)
@@ -193,6 +195,7 @@ class LossBase(MetricLossBase):
     def loss_batch(self, batch: Union[list, tuple], is_score=False):
         """
         Compute loss over all losses objects (__loss list) using summation.
+
         Args:
           is_score: A boolean, for zero shot case
           batch: A list or tuple, subset of data examples.
@@ -223,13 +226,13 @@ class EarlyStopping(object):
           >>> entry = {'es_strategy':'patience', 'es_metric':'val_cost', 'es_min_delta': 1e-3, 'es_patience': 10 }
           >>> ES = EarlyStopping(entry)
           >>> print(ES.es_strategy)
-          'patience'
+          patience
 
           # first drop strategy
           >>> entry = {'es_strategy':'first_drop', 'es_metric':'val_score'}
           >>> ES = EarlyStopping(entry)
           >>> print(ES.es_strategy)
-          'first_drop'
+          first_drop
 
           # save weights object example
           >>> # entry = {'es_strategy':'first_drop', 'es_metric':'val_score'}
@@ -292,13 +295,13 @@ class EarlyStopping(object):
 
 class History(object):
     """
-
+    History object to track epoch performance of nn model
     """
     def __init__(self, dataset):
         """
 
         Args:
-            dataset:
+            dataset: A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
         """
         dataset_attrs = self.__get_dataset_atr(dataset)
         self.history = self.__set_up_history(dataset_attrs)
@@ -307,12 +310,13 @@ class History(object):
     @staticmethod
     def __get_dataset_atr(dataset):
         """
+        Get dataset attributes.
 
         Args:
-            dataset:
+            dataset: A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
 
         Returns:
-
+            `list`: `dataset` attributes with '_' separator
         """
         def append_atr(dataset_attr, example_type):
             if hasattr(dataset, example_type):
@@ -332,12 +336,13 @@ class History(object):
 
     def __set_up_history(self, dataset_attrs):
         """
+        Set up `History.history`
 
         Args:
-            dataset_attrs:
+            dataset_attrs (`list`): `dataset` attributes with '_' separator
 
         Returns:
-
+            `dict`: empty history with attributes.
         """
         mtrs_attr = ['cost']
         if hasattr(self, 'score_mtr'):
@@ -356,13 +361,12 @@ class History(object):
 
     def append_history_print(self, dataset, epoch, print_types=None):
         """
+        Append and print epoch performance to history if print types is not None.
 
         Args:
-            dataset:
-            epoch:
-            print_types:
-
-        Returns:
+            dataset: A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
+            epoch (`int`): index of epoch
+            print_types (`list`): e.g. types: ['train'], ['train', 'val'], ['val', 'test']
 
         """
         def val_test_metrics(dataset_example, key_split):
@@ -391,7 +395,6 @@ class History(object):
 
         for key in self.history.keys():
             key_split = key.split('_')
-            value = None
             if 'train' in key_split and 'train' in print_types:
                 if 'cost' in key_split:
                     value = self.cost_mtr.metric_dataset(dataset.train)
@@ -483,6 +486,7 @@ class Trainer(History):
     def set_early_stop(self, early_stop_vars):
         """
         Early stopping setter.
+
         Args:
           early_stop_vars: A dict, new early stopping parameters.
 

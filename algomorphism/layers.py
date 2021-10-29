@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.python.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense
 
 
 class FC(tf.Module):
