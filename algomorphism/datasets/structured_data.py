@@ -6,7 +6,7 @@ from typing import List
 
 class FromEdgesListExamples(GraphBaseDataset):
     """
-    Create ndarray Adjency (+renormilized), identiy (featur) matrixes by list of graphs with edges.
+    Create ndarray Adjency (+renormilized), identiy (feature) matrixes by list of graphs with edges.
 
     Examples:
             >>> e_list = [[[0,1], [1,2], [1,3], [1,4], [1,5]], [[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]]]

@@ -71,23 +71,23 @@ class GraphBaseDataset(object):
             >>> print(x.shape)
             (54, 48)
         """
-        disjoint_a = a_list[0]
-        disjoint_x = x_list[0]
+        def zero_padding_concat(x, x_disjoint, nx, ndx):
+            x_disjoint = np.concatenate([x_disjoint, np.zeros((x_disjoint.shape[0], nx))], axis=1)
+            x = np.concatenate([np.zeros((x.shape[0], ndx)), x], axis=1)
+            x_disjoint = np.concatenate([x_disjoint, x], axis=0)
+            return x_disjoint
+
+        a_disjoint = a_list[0]
+        x_disjoint = x_list[0]
         for a, x in zip(a_list[1:], x_list[1:]):
             na = a.shape[1]
-            nda = disjoint_a.shape[1]
+            nda = a_disjoint.shape[1]
             nx = x.shape[1]
-            ndx = disjoint_x.shape[1]
+            ndx = x_disjoint.shape[1]
+            a_disjoint = zero_padding_concat(a, a_disjoint, na, nda)
+            x_disjoint = zero_padding_concat(x, x_disjoint, nx, ndx)
 
-            disjoint_a = np.concatenate([disjoint_a, np.zeros((disjoint_a.shape[0], na))], axis=1)
-            a = np.concatenate([np.zeros((a.shape[0], nda)), a], axis=1)
-            disjoint_a = np.concatenate([disjoint_a, a], axis=0)
-
-            disjoint_x = np.concatenate([disjoint_x, np.zeros((disjoint_x.shape[0], nx))], axis=1)
-            x = np.concatenate([np.zeros((x.shape[0], ndx)), x], axis=1)
-            disjoint_x = np.concatenate([disjoint_x, x], axis=0)
-
-        return disjoint_x, disjoint_a
+        return x_disjoint, a_disjoint
 
     @staticmethod
     def renormalization(a):
