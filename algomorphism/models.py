@@ -5,9 +5,9 @@ from algomorphism.metrics import WeightedCrossEntropyWithLogits as mWCEL
 from algomorphism.layers import GCN, IP, FC
 
 
-class MiniGAE(tf.Module, BaseNeuralNetwork):
-    def __init__(self, dataset, ft_number, w_p, norm=1, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
-                 learning_rate=1e-2):
+class GAE(tf.Module, BaseNeuralNetwork):
+    def __init__(self, dataset, df_list, w_p, norm=1, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
+                 learning_rate=1e-2, ip_weights=False):
         tf.Module.__init__(self, name='gae')
         status = [
             [0],
@@ -37,50 +37,43 @@ class MiniGAE(tf.Module, BaseNeuralNetwork):
 
         BaseNeuralNetwork.__init__(self, status, dataset, early_stop_vars, weights_outfile, optimizer, learning_rate)
 
-        self.gcn1 = GCN(ft_number, 16, "relu", "gcn1")
-        self.gcn2 = GCN(16, 32, name="gcn2")
-        self.ip = IP()
+        for i, dfi in enumerate(df_list[:-2]):
+            setattr(self, 'gcn{}'.format(i),
+                   GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i))
+            )
+        self.gcn_z = GCN(df_list[-2], df_list[-1], name="gcn_z")
 
-    def encoder(self, X, Atld):
-        x = self.gcn1(X, Atld)
-        x = self.gcn2(x, Atld)
-        return x
+        if ip_weights:
+            self.ip = IP(df_list[-1])
+        else:
+            self.ip = IP()
+
+        self.__depth = len(df_list)
+
+    def encoder(self, x, atld):
+        for i in range(self.__depth - 2):
+            x = getattr(self, 'gcn{}'.format(i))(x, atld)
+
+        z = self.gcn_z(x, atld)
+        return z
 
     def decoder(self, z):
         x = self.ip(z)
         return x
 
-    def __call__(self, inputs):
-        x = self.encoder(inputs[0], inputs[1])
-        y = self.decoder(x)
+    def __call__(self, inputs, is_score=False):
+        z = self.encoder(inputs[0], inputs[1])
+        y = self.decoder(z)
 
-        if self.get_score_mode():
+        if is_score:
             y = tf.nn.sigmoid(y)
 
         return tuple((y,))
 
 
-class Knn(object):
-    def __init__(self):
-        self.__knn = KNeighborsClassifier(1)
-
-    def fit(self, x, y):
-        self.__knn.fit(x, y)
-
-    def predict(self, x):
-        return self.__knn.predict(x)
-
-    def predict_dataset(self, dataset):
-        pred = []
-        for x, _, _, _ in dataset:
-            pred.append(self.predict(x))
-        pred = tf.concat(pred, axis=0)
-        return pred
-
-
-class GCNwithDepth(tf.Module, BaseNeuralNetwork):
-    def __init__(self, dataset, nf0, nc, depth=1, nfi=64, learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None,
-                 name='gcn'):
+class GCNClassifier(tf.Module, BaseNeuralNetwork):
+    def __init__(self, dataset, df_list, nc, optimizer='Adam', learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None,
+                 name='gcnclf'):
 
         tf.Module.__init__(self, name=name)
         status = [
@@ -88,8 +81,6 @@ class GCNwithDepth(tf.Module, BaseNeuralNetwork):
             [0],
             [1, 2]
         ]
-
-        self.depth = depth
 
         self.score_mtr = MetricBase(self,
                                     [tf.keras.metrics.CategoricalAccuracy()],
@@ -108,24 +99,24 @@ class GCNwithDepth(tf.Module, BaseNeuralNetwork):
                                   [0]
                                   )
 
-        BaseNeuralNetwork.__init__(self, status, dataset=dataset,
+        BaseNeuralNetwork.__init__(self, status, dataset=dataset, optimizer=optimizer,
                                    learning_rate=learning_rate, clip_norm=clip_norm, early_stop_vars=early_stop_vars)
-        depthi = '1'
-        setattr(self, 'gcn{}'.format(depthi), GCN(nf0, nfi, 'relu'))
-        for d in range(1, self.depth):
-            depthi = str(d + 1)
-            setattr(self, 'gcn{}'.format(depthi), GCN(nfi, nfi, 'relu'))
+
+        for i, dfi in enumerate(df_list[:-1]):
+            setattr(self, 'gcn{}'.format(i),
+                    GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i)))
 
         self.flatten = tf.keras.layers.Flatten()
-        self.fc1 = FC(nf0 * nfi, 256, 'relu')
-        self.out = FC(256, nc, 'softmax')
+        self.fc1 = FC(df_list[0] * df_list[-1], 512, 'relu')
+        self.out = FC(512, nc, 'softmax')
+
+        self.__depth = len(df_list)
 
     def __call__(self, inputs):
-        depthi = '1'
-        x = getattr(self, 'gcn{}'.format(depthi))(inputs[0], inputs[1])
-        for d in range(1, self.depth):
-            depthi = str(d + 1)
-            x = getattr(self, 'gcn{}'.format(depthi))(x, inputs[1])
+        x = inputs[0]
+        atld = inputs[1]
+        for i in range(self.__depth - 1):
+            x = getattr(self, 'gcn{}'.format(i))(x, atld)
 
         x = self.flatten(x)
         x = self.fc1(x)

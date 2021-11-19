@@ -165,6 +165,9 @@ class MetricBase(MetricLossBase):
         for i, ms in enumerate(self.__mtr_select):
             self.__mtr[ms].update_state(true_outputs[i], predict_outputs[i])
 
+    def set_mtr_params(self, mtr_idx, **kwargs):
+        self.__mtr[mtr_idx].set_mtr_params(**kwargs)
+
 
 class LossBase(MetricLossBase):
     """
@@ -211,6 +214,9 @@ class LossBase(MetricLossBase):
             loss += self.__loss[ls](true_outputs[i], pred_outputs[i])
 
         return loss
+
+    def set_loss_params(self, loss_idx, **kwargs):
+        self.__loss[loss_idx].set_loss_params(**kwargs)
 
 
 class EarlyStopping(object):
@@ -281,8 +287,8 @@ class EarlyStopping(object):
                     if len(sub_h) >= self.es_patience:
                         if abs(sub_h[-1] - sub_h[-self.es_patience]) < self.es_min_delta:
                             return True
-                        else:
-                            return False
+                        elif sub_h[-1] > max(sub_h[:-1]):
+                            self.__save_weights()
                     return False
 
     def __save_weights(self):
@@ -521,7 +527,6 @@ class BaseNeuralNetwork(Trainer):
 
     Attributes:
       __status: A list, a nested list for input/output of model (see MetricLossBase for details),
-      __score_mode: A bool, this boolean have use of switch the mode of zero shot nn model output (categorical (score) 'True' or vector 'False').
     """
 
     def __init__(self, status, dataset, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
@@ -542,13 +547,6 @@ class BaseNeuralNetwork(Trainer):
         super(BaseNeuralNetwork, self).__init__(dataset, early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
 
         self.__status = status
-        self.__score_mode = False
-
-    def get_score_mode(self):
-        """
-        Score mode getter.
-        """
-        return self.__score_mode
 
     def get_results(self, dataset, is_score=False):
 
@@ -574,19 +572,20 @@ class BaseNeuralNetwork(Trainer):
         return_dict = {
             'train': (forloop(dataset.train))
         }
+        if hasattr(dataset, 'val'):
+            if hasattr(dataset.val, 'seen'):
+                return_dict['val_seen'] = (forloop(dataset.val.seen))
+            if hasattr(dataset.val, 'unseen'):
+                return_dict['val_unseen'] = (forloop(dataset.val.unseen))
+            if not hasattr(dataset.val, 'seen') and not hasattr(dataset.val, 'unseen'):
+                return_dict['val'] = (forloop(dataset.val))
 
-        if hasattr(dataset.val, 'seen'):
-            return_dict['val_seen'] = (forloop(dataset.val.seen))
-        if hasattr(dataset.val, 'unseen'):
-            return_dict['val_unseen'] = (forloop(dataset.val.unseen))
-        if not hasattr(dataset.val, 'seen') and not hasattr(dataset.val, 'unseen'):
-            return_dict['val'] = (forloop(dataset.val))
-
-        if hasattr(dataset.test, 'seen'):
-            return_dict['test_seen'] = (forloop(dataset.test.seen))
-        if hasattr(dataset.test, 'unseen'):
-            return_dict['test_unseen'] = (forloop(dataset.test.unseen))
-        if not hasattr(dataset.val, 'seen') and not hasattr(dataset.test, 'unseen'):
-            return_dict['test'] = (forloop(dataset.test))
+        if hasattr(dataset, 'test'):
+            if hasattr(dataset.test, 'seen'):
+                return_dict['test_seen'] = (forloop(dataset.test.seen))
+            if hasattr(dataset.test, 'unseen'):
+                return_dict['test_unseen'] = (forloop(dataset.test.unseen))
+            if not hasattr(dataset.val, 'seen') and not hasattr(dataset.test, 'unseen'):
+                return_dict['test'] = (forloop(dataset.test))
 
         return return_dict

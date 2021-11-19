@@ -4,16 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def pca_denoising_figure(pca_vl_s, pca_ts_s, pca_vl_u, pca_ts_u, pca_emb, knn_pca,
+def pca_denoising_figure(pca_predicted_types, pca_emb, knn_pca,
                          zlabels, pca_emb_idxs, save_obj=None):
     """
     Draw the knn_pca spaces, plot target embeddings, predicted validation (seen) embeddings and test (unseen) embeddings.
 
     Args:
-        pca_vl_s: A ndarray, pca denoised validation seen embeddings where predicted,
-        pca_ts_s: A ndarray, pca denoised test seen embeddings where predicted,
-        pca_vl_u: A ndarray, pca denoised validation unseen unseen embeddings where predicted,
-        pca_ts_u: A ndarray, pca denoised test unssen embeddings where predicted,
+        pca_predicted_types: A dict, pca denoised predicted embeddings,
         pca_emb: A ndarray, pca denoised true embeddings,
         knn_pca: A KNeighborsClassifier object, trained by pca_emb,
         zlabels: A list, list of true embedding labels,
@@ -37,22 +34,23 @@ def pca_denoising_figure(pca_vl_s, pca_ts_s, pca_vl_u, pca_ts_u, pca_emb, knn_pc
     knn_space = np.argmax(knn_pca.predict(np.c_[xx.ravel(), yy.ravel()]), axis=1)
     knn_space = knn_space.reshape(xx.shape)
 
-    Dx = 0
-    Dy = 1
+    dx = 0
+    dy = 1
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    plt.plot(pca_emb[pca_emb_idxs, Dx], pca_emb[pca_emb_idxs, Dy], 'o', label='embs', markersize=15)
-    plt.plot(pca_vl_s[:, Dx], pca_vl_s[:, Dy], '*', label='val seen', markersize=10)
-    plt.plot(pca_vl_u[:, Dx], pca_vl_u[:, Dy], '+', label='val unseen', markersize=10)
-    plt.plot(pca_ts_s[:, Dx], pca_ts_s[:, Dy], 'v', label='test seen', markersize=10)
-    plt.plot(pca_ts_u[:, Dx], pca_ts_u[:, Dy], 's', label='test unseen', markersize=10)
+    plt.plot(pca_emb[pca_emb_idxs, dx], pca_emb[pca_emb_idxs, dy], 'o', label='embs', markersize=15)
+
+    icons = ['*', '+', 'x', '^', 'd']
+    for icon, (k, v) in zip(icons, pca_predicted_types.items()):
+        label = ' '.join(k.split('_'))
+        plt.plot(v[:, dx], v[:, dy], icon, label=label, markersize=10)
 
     zlabels = zip(zlabels, range(len(zlabels)))
     zlabels = list(filter(lambda x: x[0] if x[1] in pca_emb_idxs else None, zlabels))
     zlabels = [zlabel[0] for zlabel in zlabels]
 
     for (v, l) in zip(pca_emb[pca_emb_idxs], zlabels):
-        plt.text(v[Dx], v[Dy], l, fontsize=20)
+        plt.text(v[dx], v[dy], l, fontsize=20)
 
     ax.contourf(xx, yy, knn_space, cmap=plt.get_cmap('tab20c'), levels=len(pca_emb_idxs))
     plt.legend()

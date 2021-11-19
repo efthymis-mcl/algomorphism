@@ -4,7 +4,7 @@ from tensorflow.keras.layers import LSTM, Dense
 
 class FC(tf.Module):
     def __init__(self, in_features,out_features,activation=None):
-        super(FC,self).__init__(name="fc")
+        super(FC, self).__init__(name="fc")
 
         self.weights = tf.Variable(
             tf.keras.initializers.GlorotUniform()(shape=[in_features, out_features]),
@@ -105,14 +105,13 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
 
 class LSTM_At(tf.keras.layers.Layer):
-    def __init__(self, units, name, batch_input_shape=None):
+    def __init__(self, units, name, activation='tanh'):
         super(LSTM_At, self).__init__(name=name)
 
-        self.lstm1 = LSTM(units, return_sequences=True, batch_input_shape=batch_input_shape)
+        self.lstm1 = LSTM(units, return_sequences=True, activation=activation)
         self.at1 = Attention(units)
 
     def call(self, inpt):
         x = self.lstm1(inpt)
         y = self.at1(x)
-
         return y
