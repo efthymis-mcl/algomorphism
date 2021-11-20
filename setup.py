@@ -4,7 +4,7 @@
 from codecs import open
 from os.path import abspath, dirname, join
 
-from setuptools import setup
+from distutils.core import setup
 
 from algomorphism import __version__
 
@@ -33,8 +33,12 @@ setup(
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
     # keywords = 'cli',
-    packages=['algomorphism'],
-    package_dir={'algomorphism': 'algomorphism'},
+    packages=['algomorphism',
+              'algomorphism.datasets',
+              'algomorphism.figures',
+              'algomorphism.methods'
+    ],
+    package_dir={'': 'algomorphism'},
     install_requires=[
         'tensorflow',
         'scikit-learn',
