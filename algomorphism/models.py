@@ -1,8 +1,7 @@
-from sklearn.neighbors import KNeighborsClassifier
 import tensorflow as tf
-from algomorphism.base import BaseNeuralNetwork, MetricBase, LossBase
-from algomorphism.metrics import WeightedCrossEntropyWithLogits as mWCEL
-from algomorphism.layers import GCN, IP, FC
+from .base import BaseNeuralNetwork, MetricBase, LossBase
+from .metrics import WeightedCrossEntropyWithLogits as mWCEL
+from .layers import GCN, IP, FC
 
 
 class GAE(tf.Module, BaseNeuralNetwork):
@@ -39,8 +38,8 @@ class GAE(tf.Module, BaseNeuralNetwork):
 
         for i, dfi in enumerate(df_list[:-2]):
             setattr(self, 'gcn{}'.format(i),
-                   GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i))
-            )
+                    GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i))
+                    )
         self.gcn_z = GCN(df_list[-2], df_list[-1], name="gcn_z")
 
         if ip_weights:
