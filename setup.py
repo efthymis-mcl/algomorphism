@@ -38,7 +38,7 @@ setup(
               'algomorphism.figures',
               'algomorphism.methods'
     ],
-    package_dir={'': 'algomorphism'},
+    package_dir={'algomorphism': 'algomorphism'},
     install_requires=[
         'tensorflow',
         'scikit-learn',
