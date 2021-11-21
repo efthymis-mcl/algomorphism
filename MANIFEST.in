@@ -2,3 +2,4 @@ include README.rst LICENSE.md
 recursive-include algomorphism *.py
 recursive-include algomorphism/figures *.py
 recursive-include algomorphism/methods *.py
+recursive-include algomorphism/datasets *.py

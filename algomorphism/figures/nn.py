@@ -124,45 +124,34 @@ def multiple_models_history_figure(nn_models: list, figsize=(16, 8), legend_font
             plt.show()
 
 
-# def print_confmtx(model, dataset, lerninfo: str, indexes_list: list):
-#     """
-#     Print confusion matrix per examples (train, test, validation)
-#     Args:
-#         model: An object, The model interference ` algomorphism.base.BaseNueralNetwork ` object,
-#         dataset: An object,
-#         lerninfo: A str,
-#         indexes_list: A list.
-#     """
-#
-#     def confmtx(y, yhat):
-#         confmtx = np.zeros((y.shape[1], y.shape[1]))
-#         y = np.argmax(y, axis=1)
-#         yhat = np.argmax(yhat, axis=1)
-#         y_concat = np.concatenate([y.reshape(-1, 1), yhat.reshape(-1, 1)], axis=1)
-#
-#         for y1, y2 in y_concat:
-#             confmtx[y1, y2] += 1
-#
-#         return confmtx
-#
-#     (_, outs_tr, p_train), (_, outs_vl, p_val), (_, outs_ts, p_test) = model.get_results(dataset, True)
-#
-#     indxr = indexes_list[0]
-#     indxa = indexes_list[1]
-#
-#     (r_train, a_train) = outs_tr[indxr], outs_tr[indxa]
-#     (r_val, a_val) = outs_vl[indxr], outs_vl[indxa]
-#     (r_test, a_test) = outs_ts[indxr], outs_ts[indxa]
-#
-#     lr = [[r_train, p_train[indxr]], [r_val, p_val[indxr]], [r_test, p_test[indxr]]]
-#     la = [[a_train, p_train[indxa]], [a_val, p_val[indxa]], [a_test, p_test[indxa]]]
-#
-#     print('a', lerninfo)
-#     for expl, (tr, pr) in zip(['train', 'val', 'test'], la):
-#         print(expl)
-#         print(confmtx(tr, pr))
-#
-#     print('r', lerninfo)
-#     for expl, (tr, pr) in zip(['train', 'val', 'test'], lr):
-#         print(expl)
-#         print(confmtx(tr, pr))
+def print_confmtx(model, dataset, info: str, true_idx:int, predict_idx:int):
+    """
+    Print confusion matrix per examples (train, test, validation)
+    Args:
+        model: An object, The model interference `algomorphism.base.BaseNueralNetwork` object,
+        dataset: An object,
+        lerninfo: A str,
+        indexes_list: A list.
+    """
+
+    def confmtx(y, yhat):
+        confmtx = np.zeros((y.shape[1], y.shape[1]))
+        y = np.argmax(y, axis=1)
+        yhat = np.argmax(yhat, axis=1)
+        y_concat = np.concatenate([y.reshape(-1, 1), yhat.reshape(-1, 1)], axis=1)
+
+        for y1, y2 in y_concat:
+            confmtx[y1, y2] += 1
+
+        return confmtx
+
+    result_dict = model.get_results(dataset, True)
+
+    print(info)
+    print('='*len(info))
+    for k, v in result_dict.items():
+        print(k)
+        tr = v['outs'][true_idx]
+        pr = v['predicts'][predict_idx]
+        print(confmtx(tr, pr))
+

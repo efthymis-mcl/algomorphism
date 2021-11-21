@@ -551,41 +551,68 @@ class BaseNeuralNetwork(Trainer):
     def get_results(self, dataset, is_score=False):
 
         def forloop(dataset_exmpl):
+
+            def list_2d_transpose(list_2d):
+                list_flat = [vij for vi in list_2d for vij in vi]
+                list_2d_tr_len = len(list_flat)//len(list_2d)
+
+                list_2d_tr = [[] for _ in range(list_2d_tr_len)]
+                for i, xf in enumerate(list_flat):
+                    xti = i % list_2d_tr_len
+                    list_2d_tr[xti].append(xf)
+
+                for i in range(list_2d_tr_len):
+                    list_2d_tr[i] = tf.concat(list_2d_tr[i], axis=0)
+
+                return list_2d_tr
+
             in_idxs = self.cost_mtr.status_idxs(0, self.__status)
             tr_out_idxs = self.cost_mtr.status_idxs(2, self.__status)
+            inputs_list = []
+            outs_list = []
+            predicts_list = []
             for batch in dataset_exmpl:
                 inputs = self.cost_mtr.get_batch_by_indxs(batch, in_idxs)
                 outs = self.cost_mtr.get_batch_by_indxs(batch, tr_out_idxs)
                 if is_score:
                     if hasattr(self, "__call__"):
-                        predict = self.__call__(inputs, is_score)
+                        predicts = self.__call__(inputs, is_score)
                     elif hasattr(self, "call"):
-                        predict = self.call(inputs, is_score)
+                        predicts = self.call(inputs, is_score)
                 else:
                     if hasattr(self, "__call__"):
-                        predict = self.__call__(inputs)
+                        predicts = self.__call__(inputs)
                     elif hasattr(self, "call"):
-                        predict = self.call(inputs)
+                        predicts = self.call(inputs)
+                inputs_list.append(inputs)
+                outs_list.append(outs)
+                predicts_list.append(predicts)
 
-            return inputs, outs, predict
+            return_dict = {
+                "inputs": list_2d_transpose(inputs_list),
+                "outs": list_2d_transpose(outs_list),
+                "predicts": list_2d_transpose(predicts_list)
+            }
+
+            return return_dict
 
         return_dict = {
-            'train': (forloop(dataset.train))
+            'train': forloop(dataset.train)
         }
         if hasattr(dataset, 'val'):
             if hasattr(dataset.val, 'seen'):
-                return_dict['val_seen'] = (forloop(dataset.val.seen))
+                return_dict['val_seen'] = forloop(dataset.val.seen)
             if hasattr(dataset.val, 'unseen'):
-                return_dict['val_unseen'] = (forloop(dataset.val.unseen))
+                return_dict['val_unseen'] = forloop(dataset.val.unseen)
             if not hasattr(dataset.val, 'seen') and not hasattr(dataset.val, 'unseen'):
-                return_dict['val'] = (forloop(dataset.val))
+                return_dict['val'] = forloop(dataset.val)
 
         if hasattr(dataset, 'test'):
             if hasattr(dataset.test, 'seen'):
-                return_dict['test_seen'] = (forloop(dataset.test.seen))
+                return_dict['test_seen'] = forloop(dataset.test.seen)
             if hasattr(dataset.test, 'unseen'):
-                return_dict['test_unseen'] = (forloop(dataset.test.unseen))
+                return_dict['test_unseen'] = forloop(dataset.test.unseen)
             if not hasattr(dataset.val, 'seen') and not hasattr(dataset.test, 'unseen'):
-                return_dict['test'] = (forloop(dataset.test))
+                return_dict['test'] = forloop(dataset.test)
 
         return return_dict

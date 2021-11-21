@@ -90,7 +90,7 @@ def pca_denoising_preprocessing(model, dataset, Z, Y, pca_emb_idxs, embidx=0, ex
     pca_emb = pca.transform(Z)
     pca_predicted_types = {}
     for ept in example_predicted_types:
-        pca_ept = pca.transform(results_dict[ept][-1][embidx])
+        pca_ept = pca.transform(results_dict[ept]["predicts"][embidx])
         pca_predicted_types[ept] = pca_ept
 
     dx = 0
@@ -99,7 +99,7 @@ def pca_denoising_preprocessing(model, dataset, Z, Y, pca_emb_idxs, embidx=0, ex
     knn_pca.fit(pca_emb[:, [dx, dy]][pca_emb_idxs], Y[pca_emb_idxs])
 
     for k in pca_predicted_types.keys():
-        pca_dn_ept = pca_denoising(results_dict[k][-1][embidx], pca_emb, pca_predicted_types[k], model.knn, knn_pca)
+        pca_dn_ept = pca_denoising(results_dict[k]["predicts"][embidx], pca_emb, pca_predicted_types[k], model.knn, knn_pca)
         pca_predicted_types[k] = pca_dn_ept
 
     return pca_predicted_types, pca_emb, knn_pca
@@ -113,7 +113,6 @@ def three_d_identity_matrix(n):
         n: A int, size of 3d matrix.
 
     Returns:
-        A tf_tensor, 3D identity matrix.
+        A ndarray, 3D identity matrix.
     """
-    return tf.cast([[[1 if i == j and j == w else 0 for i in range(n)] for j in range(n)] for w in range(n)],
-                   tf.float32)
+    return np.array([[[1 if i == j and j == w else 0 for i in range(n)] for j in range(n)] for w in range(n)])
