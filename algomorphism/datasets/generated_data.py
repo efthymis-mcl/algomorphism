@@ -193,9 +193,52 @@ class SimpleGraphsDataset(GraphBaseDataset):
 
 # Zero Shot Learning task
 class BubbleDataset(object):
+    """
+    Bubble dataset: Simple Dataset for Zero-Shot Learning task. Generate 5 types of cluster points:
+        - top left,
+        - top right,
+        - middle,
+        - bottom left,
+        - bottom right.
 
+    Attributes:
+        data_dict: A dictionery, per class (root key) contains class emneding "class_emb" and data examples "x".
+        train: A `tf.data.Dataset` object,
+        val: A `SeenUNseenBase` object,
+        test: A `SeenUnseenBase` object,
+        __lb: A `LabelBinarizer` object.
+
+    Examples:
+        >>> n_data = 1000
+        >>> train_percentage = 0.8
+        >>> val_percentage = 0.1
+        >>> test_percentage = 0.1
+        >>> # prepare seen & unseen classes
+        >>> seen_classes = ['top_left', 'top_right', 'middle', 'bottom_left']
+        >>> unseen_classes = ['bottom_right']
+        >>> # sigma means the variance the of example points.
+        >>> sigma = 0.5
+        >>> bd = BubbleDataset(
+        ...     n_data=n_data,
+        ...     train_per=train_percentage,
+        ...     val_per=val_percentage,
+        ...     test_per=test_percentage,
+        ...     seen_classes=seen_classes,
+        ...     unseen_classes=unseen_classes,
+        ...     sigma=sigma)
+    """
     def __init__(self, n_data=5000, train_per=0.6, val_per=0.3, test_per=0.1, seen_classes=None, unseen_classes=None,
                  sigma=1.0):
+        """
+        Args:
+            n_data: A int, number of examples,
+            train_per: A float, percentage of train examples,
+            val_per: A float, percentage of validation examples,
+            test_per: A float, percentage of test examples,
+            seen_classes: A list, seen classes. Default is ['top_left', 'top_right', 'bottom_left', 'bottom_right'],
+            unseen_classes: A list, unseen classes. Default is ['middle'],
+            sigma: A float, the variance of data points.
+        """
         class_names = ['top_left', 'top_right', 'middle', 'bottom_left', 'bottom_right']
         class_embeddings = np.array([
             [-1.0, 1.0],
@@ -243,7 +286,7 @@ class BubbleDataset(object):
             one_hot_key = self.__lb.transform([k])[0]
             if k in seen_classes:
                 x_tr, x_vl_ts = train_test_split(v['x'], train_size=train_per)
-                x_vl, x_ts = train_test_split(x_vl_ts, train_size=test_per / train_per)
+                x_vl, x_ts = train_test_split(x_vl_ts, train_size=val_per/(1 - train_per))
 
                 x_train.append(x_tr)
                 x_val_seen.append(x_vl)
@@ -258,7 +301,7 @@ class BubbleDataset(object):
                 y_test_seen.append(np.stack([one_hot_key] * x_ts.shape[0], axis=0))
 
             elif k in unseen_classes:
-                x_vl, x_ts = train_test_split(v['x'], train_size=test_per / val_per)
+                x_vl, x_ts = train_test_split(v['x'], train_size=test_per/(1 - val_per))
                 x_val_unseen.append(x_vl)
                 x_test_unseen.append(x_ts)
                 y_emb_val_unseen.append(np.stack([v['class_emb']] * x_vl.shape[0], axis=0))

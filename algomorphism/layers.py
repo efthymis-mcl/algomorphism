@@ -3,7 +3,7 @@ from tensorflow.keras.layers import LSTM, Dense
 
 
 class FC(tf.Module):
-    def __init__(self, in_features,out_features,activation=None):
+    def __init__(self, in_features, out_features, activation=None):
         super(FC, self).__init__(name="fc")
 
         self.weights = tf.Variable(
@@ -65,6 +65,7 @@ class IP(tf.Module):
 
 
 class Attention(tf.keras.layers.Layer):
+
     def __init__(self, units):
         super(Attention, self).__init__(name='attention')
 
@@ -85,6 +86,11 @@ class Attention(tf.keras.layers.Layer):
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
+    """
+
+    References:
+        Bahdanau Attention: https://www.tensorflow.org/text/tutorials/nmt_with_attention
+    """
     def __init__(self, units):
         super(BahdanauAttention, self).__init__(name='bahdanau_attention')
 
