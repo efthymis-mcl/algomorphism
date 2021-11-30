@@ -3,6 +3,9 @@ from tensorflow.keras.layers import LSTM, Dense
 
 
 class FC(tf.Module):
+    """
+    Full Connected layer.
+    """
     def __init__(self, in_features, out_features, activation=None):
         super(FC, self).__init__(name="fc")
 
@@ -23,6 +26,9 @@ class FC(tf.Module):
 
 
 class GCN(tf.Module):
+    """
+    Graph Convolutional Layer
+    """
     def __init__(self, in_features, out_features, activation=None, name=None):
         if name is None:
             name = "gcn"
@@ -46,6 +52,9 @@ class GCN(tf.Module):
 
 
 class IP(tf.Module):
+    """
+    Inner Product layer (weights is optional)
+    """
     def __init__(self, in_features=None, activation=None):
         super(IP, self).__init__(name='ip')
         self.weights = None
@@ -65,6 +74,12 @@ class IP(tf.Module):
 
 
 class Attention(tf.keras.layers.Layer):
+    """
+    Attention Mechanism layer.
+
+    References:
+        - Attention Is All You Need: https://arxiv.org/abs/1706.03762
+    """
 
     def __init__(self, units):
         super(Attention, self).__init__(name='attention')
@@ -89,7 +104,8 @@ class BahdanauAttention(tf.keras.layers.Layer):
     """
 
     References:
-        Bahdanau Attention: https://www.tensorflow.org/text/tutorials/nmt_with_attention
+        - End-to-End Attention-based Large Vocabulary Speech Recognition: https://arxiv.org/abs/1508.04395
+        - Bahdanau Attention implantation: https://www.tensorflow.org/text/tutorials/nmt_with_attention
     """
     def __init__(self, units):
         super(BahdanauAttention, self).__init__(name='bahdanau_attention')

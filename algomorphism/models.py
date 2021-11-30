@@ -5,6 +5,13 @@ from .layers import GCN, IP, FC
 
 
 class GAE(tf.Module, BaseNeuralNetwork):
+    """
+    Graph Auto Encoder.
+
+    References:
+        - Variational Graph Auto-Encoders: https://arxiv.org/abs/1611.07308
+        - Graph Auto Encoder implantation: https://github.com/tkipf/gae
+    """
     def __init__(self, dataset, df_list, w_p, norm=1, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
                  learning_rate=1e-2, ip_weights=False):
         tf.Module.__init__(self, name='gae')
@@ -71,6 +78,14 @@ class GAE(tf.Module, BaseNeuralNetwork):
 
 
 class GCNClassifier(tf.Module, BaseNeuralNetwork):
+    """
+    Batch Graph Convolutional Network Classifier. In This architecture of Neural Network, the weights shared for all batch examples.
+    So the learning generalized up to maximum number nodes of training examples.
+
+    References:
+        - Semi-Supervised Classification with Graph Convolutional Networks: https://arxiv.org/abs/1609.02907
+        - Graph Convolutional Network implantation: https://github.com/tkipf/gcn
+    """
     def __init__(self, dataset, df_list, nc, optimizer='Adam', learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None,
                  name='gcnclf'):
 
