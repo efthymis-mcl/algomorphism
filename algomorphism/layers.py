@@ -13,14 +13,14 @@ class FC(tf.Module):
             tf.keras.initializers.GlorotUniform()(shape=[in_features, out_features]),
             name='weights'
         )
-        self.bais = tf.Variable(
+        self.bias = tf.Variable(
             tf.keras.initializers.GlorotUniform()(shape=[out_features]),
-            name='bais'
+            name='bias'
         )
         self.activation = tf.keras.activations.get(activation)
 
     def __call__(self, inputs):
-        x = tf.matmul(inputs, self.weights) + self.bais
+        x = tf.matmul(inputs, self.weights) + self.bias
         x = self.activation(x)
         return x
 
@@ -38,15 +38,15 @@ class GCN(tf.Module):
             tf.keras.initializers.GlorotUniform()(shape=[in_features, out_features]),
             name='weights'
         )
-        self.bais = tf.Variable(
+        self.bias = tf.Variable(
             tf.keras.initializers.GlorotUniform()(shape=[out_features]),
-            name='bais'
+            name='bias'
         )
         self.activation = tf.keras.activations.get(activation)
 
     def __call__(self, X, Atld):
         x = tf.matmul(Atld, X)
-        x = tf.matmul(x, self.weights) + self.bais
+        x = tf.matmul(x, self.weights) + self.bias
         x = self.activation(x)
         return x
 
@@ -133,7 +133,7 @@ class LSTM_At(tf.keras.layers.Layer):
         self.lstm1 = LSTM(units, return_sequences=True, activation=activation)
         self.at1 = Attention(units)
 
-    def call(self, inpt):
-        x = self.lstm1(inpt)
+    def call(self, input):
+        x = self.lstm1(input)
         y = self.at1(x)
         return y
