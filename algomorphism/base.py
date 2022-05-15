@@ -441,27 +441,21 @@ class Trainer(History):
       __early_stop: A dict, early stopping attributes on dictionary. Default is None.
     """
 
-    def __init__(self, dataset, early_stop_vars=None, save_weights_obj=None, optimizer="SGD", learning_rate=1e-4,
+    def __init__(self, dataset, early_stop_vars=None, save_weights_obj=None, optimizer=None,
                  clip_norm=0.0):
         """
         Args:
           early_stop_vars: A dict (optional), early stopping attributes on dictionary . Default is None,
           save_weights_obj: An object (optional), tf.models.Model or tf.Module object save_weights with partial input (path). Default is None.
-          optimizer: A str (optional), optimizer options: {'SGD', 'Adagrad', 'Adadelta', 'Adam'}. Default is `SGD`,
-          learning_rate: A float (optional), learning rate of optimizer. Default is 1e-4,
+          optimizer: A optimizer obj (optional), optimizer options: {'SGD', 'Adagrad', 'Adadelta', 'Adam'}. Default is `SGD`,
           clip_norm: A float (optional). Default is 0.0 .
         """
         super(Trainer, self).__init__(dataset)
 
-        if optimizer == "SGD":
-            self.__optimizer = SGD(learning_rate, momentum=0.98)
-        elif optimizer == "Adagrad":
-            self.__optimizer = tf.keras.optimizers.Adagrad(learning_rate=learning_rate, initial_accumulator_value=1e-3,
-                                                           epsilon=1e-7)
-        elif optimizer == "Adadelta":
-            self.__optimizer = tf.keras.optimizers.Adadelta(learning_rate=learning_rate, rho=0.98)
-        elif optimizer == "Adam":
-            self.__optimizer = Adam(learning_rate=learning_rate, amsgrad=True)
+        if optimizer is None:
+            self.__optimizer = SGD()
+        else:
+            self.__optimizer = optimizer
 
         self.__clip_norm = clip_norm
 
@@ -529,22 +523,20 @@ class BaseNeuralNetwork(Trainer):
       __status: A list, a nested list for input/output of model (see MetricLossBase for details),
     """
 
-    def __init__(self, status, dataset, early_stop_vars=None, weights_outfile=None, optimizer="SGD",
-                 learning_rate=1e-4, clip_norm=0.0):
+    def __init__(self, status, dataset, early_stop_vars=None, weights_outfile=None, optimizer=None, clip_norm=0.0):
         """
         Args:
           status: A list, a nested list for input/output of model (see MetricLossBase for details),
           early_stop_vars: A dict (optional), early stopping attributes on dictionary . Default is None,
           weights_outfile: A list (optional), a list of sub-paths. The first sub-path is the root folder for weights and
                           the second sub-path is the name of the best weights. All weights file type is `.tf`,
-          optimizer: A str (optional), the optimizer where use. Default is `SGD`,
-          learning_rate: A float (optional), the learning rate of optimizer. Default is `1e-4`.
+          optimizer: A optimizer obj (optional), the optimizer where use. Default is `SGD`,
         """
         save_weights_obj = None
         if weights_outfile is not None:
             save_weights_obj = partial(self.save_weights,
                                        "{}/weights/weights_best_{}.tf".format(weights_outfile[0], weights_outfile[1]))
-        super(BaseNeuralNetwork, self).__init__(dataset, early_stop_vars, save_weights_obj, optimizer, learning_rate, clip_norm)
+        super(BaseNeuralNetwork, self).__init__(dataset, early_stop_vars, save_weights_obj, optimizer, clip_norm)
 
         self.__status = status
 
