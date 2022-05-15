@@ -86,7 +86,7 @@ class GCNClassifier(tf.Module, BaseNeuralNetwork):
         - Semi-Supervised Classification with Graph Convolutional Networks: https://arxiv.org/abs/1609.02907
         - Graph Convolutional Network implantation: https://github.com/tkipf/gcn
     """
-    def __init__(self, dataset, df_list, nc, optimizer='Adam', learning_rate=1e-4, clip_norm=0.0, early_stop_vars=None,
+    def __init__(self, dataset, df_list, nc, optimizer=None, clip_norm=0.0, early_stop_vars=None,
                  name='gcnclf'):
 
         tf.Module.__init__(self, name=name)
@@ -113,8 +113,8 @@ class GCNClassifier(tf.Module, BaseNeuralNetwork):
                                   [0]
                                   )
 
-        BaseNeuralNetwork.__init__(self, status, dataset=dataset, optimizer=optimizer,
-                                   learning_rate=learning_rate, clip_norm=clip_norm, early_stop_vars=early_stop_vars)
+        BaseNeuralNetwork.__init__(self, status, dataset=dataset, optimizer=optimizer, clip_norm=clip_norm,
+                                   early_stop_vars=early_stop_vars)
 
         for i, dfi in enumerate(df_list[:-1]):
             setattr(self, 'gcn{}'.format(i),

@@ -2,7 +2,7 @@ from itertools import product
 from typing import Union
 
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.optimizers import SGD
 import copy
 from functools import partial
 
