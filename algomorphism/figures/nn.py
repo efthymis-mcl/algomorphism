@@ -2,21 +2,23 @@ import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
+from typing import Union, List
+from algomorphism.base import BaseNeuralNetwork
 
 
-def pca_denoising_figure(pca_predicted_types, pca_emb, knn_pca,
-                         zlabels, pca_emb_idxs, save_obj=None):
+def pca_denoising_figure(pca_predicted_types: list, pca_emb: np.ndarray, knn_pca: KNeighborsClassifier,
+                         zlabels: list, pca_emb_idxs: list, save_obj: list = None):
     """
     Draw the knn_pca spaces, plot target embeddings, predicted validation (seen) embeddings and test (unseen) embeddings.
 
     Args:
-        pca_predicted_types: A dict, pca denoised predicted embeddings,
-        pca_emb: A ndarray, pca denoised true embeddings,
-        knn_pca: A KNeighborsClassifier object, trained by pca_emb,
-        zlabels: A list, list of true embedding labels,
-        pca_emb_idxs: A list (Optional), list of subpaths saving figure. Default is [0,1,2],
-        save_obj: A list (Optional), list of subpaths saving figure. Default is None.
-
+        pca_predicted_types (`dict`): pca de-noised predicted embeddings,
+        pca_emb (`np.ndarray`): pca de-noised true embeddings,
+        knn_pca (`KNeighborsClassifier`): trained KNeighborsClassifier by pca_emb,
+        zlabels (`list`): list of true embedding labels,
+        pca_emb_idxs (`Optional[list]=None`): list of subpaths saving figure,
+        save_obj (`list`): list of subpaths saving figure. Default is None.
     """
     dpi = 100
     xmin = np.min(pca_emb[:, 0])
@@ -60,16 +62,16 @@ def pca_denoising_figure(pca_predicted_types, pca_emb, knn_pca,
         plt.show()
 
 
-def multiple_models_history_figure(nn_models: list, figsize=(16, 8), legend_fontsize=18, axes_label_fondsize=22,
-                                   ticks_fontsize=16, save_obj=None):
+def multiple_models_history_figure(nn_models: List[BaseNeuralNetwork], figsize: Union[tuple, list] = (16, 8), legend_fontsize: int = 18, axes_label_fondsize: int = 22,
+                                   ticks_fontsize: int = 16, save_obj: list = None):
     """
     Args:
-        nn_models: A list, a model with interference ` algomorphism.base.BaseNueralNetwork `  object,
-        figsize: A tuple or list, figure size of x and y axis,
-        legend_fontsize: A int,
-        axes_label_fondsize: A int,
-        ticks_fontsize: A int,
-        save_obj: A list, list of path and name of saving figure.
+        nn_models (`List[BaseNeuralNetwork]`): list of Model Object(s),
+        figsize (`Union[tuple, list]`): figure size of x and y axis,
+        legend_fontsize (`int`): legend font size
+        axes_label_fondsize (`int`): axis label fontsize
+        ticks_fontsize (`int`): ticks font size,
+        save_obj (`list`): list of path and name of saving figure.
 
     """
     def find_sub_word_from_history_keys(param, sub_word):
@@ -124,14 +126,15 @@ def multiple_models_history_figure(nn_models: list, figsize=(16, 8), legend_font
             plt.show()
 
 
-def print_confmtx(model, dataset, info: str, true_idx:int, predict_idx:int):
+def print_confmtx(model: BaseNeuralNetwork, dataset: object, info: str, true_idx:int, predict_idx:int):
     """
     Print confusion matrix per examples (train, test, validation)
     Args:
-        model: An object, The model interference `algomorphism.base.BaseNueralNetwork` object,
-        dataset: An object,
-        lerninfo: A str,
-        indexes_list: A list.
+        model (`BaseNeuralNetwork`): the model object,
+        dataset (`object`): An object,
+        info (`str`): message info
+        true_idx (`int`): true index
+        predict_idx (`int`): predicted index
     """
 
     def confmtx(y, yhat):

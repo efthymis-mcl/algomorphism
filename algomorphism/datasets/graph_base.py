@@ -21,7 +21,7 @@ class GraphBaseDataset(object):
             >>> graph_base = GraphBaseDataset()
             >>> x_list = [np.random.rand(6,4) for _ in range(6)]+[np.random.rand(3,4) for _ in range(6)]
             >>> a_list = [np.random.rand(6,6) for _ in range(6)]+[np.random.rand(3,3) for _ in range(6)]
-            >>> x, a = graph_base.numpy_to_mega_batch(x,a)
+            >>> x, a = graph_base.numpy_to_mega_batch(x_list, a_list)
             >>> print(a.shape)
             (12, 6, 6)
             >>> print(x.shape)

@@ -1,11 +1,10 @@
-from tensorflow.keras.metrics import Metric
 import tensorflow as tf
 from functools import partial
 
 
-class WeightedCrossEntropyWithLogits(Metric):
+class WeightedCrossEntropyWithLogits(tf.keras.metrics.Metric):
     """
-    Object based on ` tf.nn.weighted_cross_entropy_with_logits ` with normalization parameter.
+    Object based on `tf.nn.weighted_cross_entropy_with_logits` with normalization parameter.
 
     Attributes:
         __loss: An object, weighted cross entropy with logits loss object where the weight given as partial,
@@ -52,7 +51,7 @@ class WeightedCrossEntropyWithLogits(Metric):
         self.__loss_sum.assign(0)
 
 
-class MeanSquaredErrorWithLambda(Metric):
+class MeanSquaredErrorWithLambda(tf.keras.metrics.Metric):
     """
     Based on ` tf.keras.metrics.MeanSquaredError ` object using a $lambda$ parameter where reduce or increase the "strength"
     of gradient at backpropagation step. A common usage is where adding two types of loss and this loss have different gradient
@@ -115,7 +114,7 @@ class MeanSquaredErrorWithLambda(Metric):
         self.__lambda = lamda
 
 
-class CategoricalCrossEntropyWithLambda(Metric):
+class CategoricalCrossEntropyWithLambda(tf.keras.metrics.Metric):
     """
     Based on ` tf.keras.metrics.CategoricalCrossentropy ` object using a $lambda$ parameter where reduce or increase the "strength"
     of gradient at backpropagation step. A common usage is where adding two types of loss and this loss have different gradient
@@ -179,7 +178,7 @@ class CategoricalCrossEntropyWithLambda(Metric):
         self.__lambda = lamda
 
 
-class LogCoshMetric(Metric):
+class LogCoshMetric(tf.keras.metrics.Metric):
     """
     LogCosh based on ` tf.keras.metrics.logcosh `.
 
@@ -224,7 +223,7 @@ class LogCoshMetric(Metric):
         self.__loss_sum.assign(0)
 
 
-class MeanEuclideanError(Metric):
+class MeanEuclideanError(tf.keras.metrics.Metric):
     """
     Mean Euclidean Error over batches. Special case for Post thesis work using min_xy where is minimum value of XY cordinates
     and maximum value of XY cordinates of given Positioning data (see Reference).
@@ -281,7 +280,7 @@ class MeanEuclideanError(Metric):
         self.__mean.assign(0)
 
 
-class ClassWeightedCategoricalCrossEntropy(Metric):
+class ClassWeightedCategoricalCrossEntropy(tf.keras.metrics.Metric):
     """
     Class weighted Categorical Cross Entropy metric for imbalance data.
 
@@ -303,7 +302,7 @@ class ClassWeightedCategoricalCrossEntropy(Metric):
         >>> data_class_one_hot = LabelBinarizer().fit_transform(data_class)
         >>> class_weights = np.sum(data_class_one_hot, axis= 0)/n_data
         >>> print(class_weights)
-        [0.25 0.25 0.2 0.15 0.15]
+        [0.25 0.25 0.2  0.15 0.15]
         >>> print(np.sum(class_weights))
         1.0
     """

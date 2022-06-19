@@ -1,11 +1,11 @@
 import numpy as np
 import networkx as nx
 from typing import Union, List, Tuple
-from algomorphism.datasets import GraphBaseDataset
 
 
-def vertexes_to_adjacency(vertexes):
+def vertexes2adjacency(vertexes):
     """
+    Transform vertexes of graph; list/tuple object to adjaceny matrix.
 
     Args:
         vertexes (`Union[List[List[int]], List[tuple], Tuple[list], Tuple[tuple]]`): vertexes.
@@ -15,7 +15,7 @@ def vertexes_to_adjacency(vertexes):
 
     Examples:
           >>> vrtxs = [[0,1], [1,2], [1,3], [1,4], [1,5]]
-          >>> a = vertexes_to_adjacency(vrtxs)
+          >>> a = vertexes2adjacency(vrtxs)
           >>> print(a.shape)
           (6, 6)
           >>> print(a)
@@ -26,7 +26,7 @@ def vertexes_to_adjacency(vertexes):
            [0. 1. 0. 0. 0. 0.]
            [0. 1. 0. 0. 0. 0.]]
           >>> vrtxs = [[0,1], [2,2], [4,1], [2,4]]
-          >>> a = vertexes_to_adjacency(vrtxs)
+          >>> a = vertexes2adjacency(vrtxs)
           >>> print(a.shape)
           (4, 4)
           >>> print(a)
@@ -47,15 +47,16 @@ def vertexes_to_adjacency(vertexes):
                 a[i, j] = 1.0
     return a
 
-def a2g(a: np.ndarray):
+
+def a2g(a: np.ndarray) -> nx.Graph:
     """
     Adjacency matrix to graph object.
 
     Args:
-        a: A ndarray, binary adjacency matrix.
+        a (`np.ndarray`): binary adjacency matrix.
 
     Returns:
-        g: A nxgraph, networkx graph object.
+        `nx.Graph`: networkx graph object.
     """
     g = nx.Graph()
     a = np.where(a == 1)
@@ -64,27 +65,28 @@ def a2g(a: np.ndarray):
     return g
 
 
-def graphs_stats(a: np.ndarray) -> Tuple[int, dict, dict, dict]:
+def graphs_stats(a_examples: np.ndarray) -> Tuple[int, dict, dict, dict]:
     """
     Statistics about graph examples. Run bfs tree on every node on every graph getting the sortest path lengest per node
     (depth). After that mesure the max depth, depth distribution per depth observation, max depth distribution (geting
     the maximum depth per graph and update the distribution) and the number of edges distribution for all nodes for all graphs.
 
     Args:
-        A: A ndarray, a list of adjacency matrix.
+        a_examples (`np.ndarray`): examples of adjency matrix.
 
     Returns:
-        max_depth: A int, max depth of all graphs for all nodes of bfs tree,
-        depth_dist: A dict, keys are the observable depth of bfs tree (such as 1, 2, 4, 5, ...),
-        maxdepth_dist: A dict, keys are the observable max-depth per node of bfs tree (such as 1, 2, 4, 5, ...),
-        edge_n: A dict, keys are the observable number of edges per graph.
+        `tuple[int, dict, dict, dict]`:
+            (max_depth): a int, max depth of all graphs for all nodes of bfs tree,
+            (depth_dist): a dict, keys are the observable depth of bfs tree (such as 1, 2, 4, 5, ...),
+            (maxdepth_dist): a dict, keys are the observable max-depth per node of bfs tree (such as 1, 2, 4, 5, ...),
+            (edge_n): A dict, keys are the observable number of edges per graph.
     """
     max_depth = 0
     depth_dist = {}
     maxdepth_dist = {}
     edge_n = {}
-    for ab in a:
-        g = a2g(ab)
+    for a in a_examples:
+        g = a2g(a)
         en = len(g.edges())
         if en not in edge_n.keys():
             edge_n[en] = 1

@@ -1,8 +1,7 @@
 from itertools import product
-from typing import Union
+from typing import Union, List
 
 import tensorflow as tf
-from tensorflow.keras.optimizers import SGD
 import copy
 from functools import partial
 
@@ -52,14 +51,14 @@ class MetricLossBase(object):
         return pred_outputs
 
     @staticmethod
-    def status_idxs(type: int, status: list):
+    def status_idxs(type: int, status: list) -> list:
         """
         Args:
-            type: A int, type of status (0, 1 or 2),
-            status: A list, nested list of status per data in example.
+            type (`int`): type of status (0, 1 or 2),
+            status (`list`): nested list of status per data in example.
 
         Returns:
-            idxs: A list, list with indexes from `status` where mach with `type`
+            `list`: list with indexes from `status` where mach with `type`
 
         Examples:
             Giving an example usage where the example have 3 data types (input, output (1st) with loss status type, output (2nd)
@@ -87,15 +86,15 @@ class MetricLossBase(object):
         return idxs
 
     @staticmethod
-    def get_batch_by_indxs(batch: Union[list, tuple], idxs: list):
+    def get_batch_by_indxs(batch: Union[list, tuple], idxs: list) -> tuple:
         """
 
         Args:
-          batch: A list or tuple, subset of data examples,
-          idxs: A list, list of indexes.
+          batch (`Union[list, tuple]`): subset of data examples,
+          idxs (`list`):list of indexes.
 
         Returns:
-          batch_by_indxs: A tuple, specific data examples based on idxs.
+          `tuple`: specific data examples based on indexes.
         """
 
         batch_by_indxs = tuple([batch[i] for i in idxs])
@@ -113,15 +112,15 @@ class MetricBase(MetricLossBase):
       __input_idxs: A list, indexes list of input data examples,
     """
 
-    def __init__(self, model, mtrs_obj, status, mtr_select, status_out_type=2):
+    def __init__(self, model: object, mtrs_obj: List[tf.keras.metrics.Metric], status: list, mtr_select: list, status_out_type: int = 2):
         """
 
         Args:
-          model: An object, based on ` tf.Module ` or ` tf.keras.model.Model `,
-          mtrs_obj: A list, list of metric objects based on ` tf.keras.metric.Metrics `,
-          status: A list, nested list of status per data of examples,
-          mtr_select: A list, list of indexes of mtrs_obj,
-          status_out_type: int (optional), type of output data of examples. Default is 2.
+          model (`object`): Model Object (MO)
+          mtrs_obj (`List[tf.keras.metrics.Metric]`): list of Metric Objects
+          status (`list`): nested list of status per data of examples,
+          mtr_select (`list`): list of indexes of mtrs_obj,
+          status_out_type (`int`): type of output data of examples. Default is 2.
         """
         super(MetricBase, self).__init__(model)
         self.__mtr = mtrs_obj
@@ -129,14 +128,15 @@ class MetricBase(MetricLossBase):
         self.__mtr_select = mtr_select
         self.__input_idxs = self.status_idxs(0, status)
 
-    def metric_dataset(self, dataset_example, is_score=False):
+    def metric_dataset(self, dataset_example: object, is_score: bool = False) -> tf.Tensor:
         """
         Calculate the average metric over all metrics depends on dataset (examples) status structure.
 
         Args:
-          dataset_example: A tf.data.Dataset,
+          dataset_example (`object`): batched examples by dataset,
+          is_score (`bool`): is score, default `False`.
         Returns:
-          mtr: tf float, average metric of all metrics summation.
+           `tf.Tensor`: average metric of all metrics summation.
 
         """
         for batch in dataset_example:
@@ -180,14 +180,14 @@ class LossBase(MetricLossBase):
       __input_idxs: A list, indexes list of input data examples,
     """
 
-    def __init__(self, model, losses_obj, status, loss_select):
+    def __init__(self, model: object, losses_obj: list, status: list, loss_select: list):
         """
 
         Args:
-          model: An object, based on ` tf.Module ` or ` tf.keras.model.Model `,
-          losses_obj: A list, list of loss objects based on ` tf.keras.losses.Loss `,
-          status: A list, nested list of status per data of examples,
-          loss_select: A list, list of indexes of losses_obj.
+          model (object`): Model Object (MO),
+          losses_obj (`list`): list of loss objects based on ` tf.keras.losses.Loss `,
+          status (`list`): nested list of status per data of examples,
+          loss_select (`list`): list of indexes of losses_obj.
         """
         super(LossBase, self).__init__(model)
         self.__loss = losses_obj
@@ -195,16 +195,16 @@ class LossBase(MetricLossBase):
         self.__loss_select = loss_select
         self.__input_idxs = self.status_idxs(0, status)
 
-    def loss_batch(self, batch: Union[list, tuple], is_score=False):
+    def loss_batch(self, batch: Union[list, tuple], is_score: bool = False) -> tf.Tensor:
         """
         Compute loss over all losses objects (__loss list) using summation.
 
         Args:
-          is_score: A boolean, for zero shot case
-          batch: A list or tuple, subset of data examples.
+          batch (`Union[list, tuple]`): subset of data examples,
+          is_score (`bool`): A boolean, for zero shot case, default is `False`.
 
         Returns:
-          loss: tf float, the summation of all losses.
+          `tf.Tensor`: the summation of all losses.
         """
         loss = 0
         inputs = self.get_batch_by_indxs(batch, self.__input_idxs)
@@ -246,12 +246,12 @@ class EarlyStopping(object):
           >>> # ES = EarlyStoping(entry, save_weights_obj)
     """
 
-    def __init__(self, entries, save_weights_obj=None):
+    def __init__(self, entries: dict, save_weights_obj: object = None):
         """
 
         Args:
-          entries: A dict, dictionary of class attributes based on early stopping (es) strategy
-          save_weights_obj: An object (optional), tf.keras.models.Model or tf.Module object save_weights with partial input (path). Default is None.
+          entries (`dict`): dictionary of class attributes based on early stopping (es) strategy
+          save_weights_obj (`object`): save weights object with partial input (path). Default is None.
 
         """
         self.es_strategy = None
@@ -261,17 +261,17 @@ class EarlyStopping(object):
             self.__metric_max = 0
         self.__save_weights_obj = save_weights_obj
 
-    def check_stop(self, h):
+    def check_stop(self, h) -> bool:
         """
         Application of early stopping strategy based on history (h). For `first drop` strategy training stops if the caption
         metric drops for first time. For `patience` strategy training stops when after a number of epochs the metric don't change,
         based on a `delta` range where the metric don't change.
 
         Args:
-          h: A dict, history dictionary
+          h (`dict`): history dictionary
 
         Returns:
-          A bool, True or False based on early stopping strategy.
+          `bool`: based on early stopping strategy.
         """
         if len(h[self.es_metric]) > 0:
             if self.es_strategy is not None and self.es_metric is not None:
@@ -314,15 +314,15 @@ class History(object):
         self.__harmonic_score = lambda seen, unseen: 2*seen*unseen/(seen + unseen)
 
     @staticmethod
-    def __get_dataset_atr(dataset):
+    def __get_dataset_atr(dataset: object) -> list:
         """
         Get dataset attributes.
 
         Args:
-            dataset: A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
+            dataset: Dataset Dataset,
 
         Returns:
-            `list`: `dataset` attributes with '_' separator
+            `list`: Dataset's Dataset attributes with '_' separator
         """
         def append_atr(dataset_attr, example_type):
             if hasattr(dataset, example_type):
@@ -365,13 +365,13 @@ class History(object):
 
         return history
 
-    def append_history_print(self, dataset, epoch, print_types=None):
+    def append_history_print(self, dataset: object, epoch: int, print_types: list = None):
         """
         Append and print epoch performance to history if print types is not None.
 
         Args:
-            dataset: A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
-            epoch (`int`): index of epoch
+            dataset (`object`): A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
+            epoch (`int`): index of epoch,
             print_types (`list`): e.g. types: ['train'], ['train', 'val'], ['val', 'test']
 
         """
@@ -445,15 +445,15 @@ class Trainer(History):
                  clip_norm=0.0):
         """
         Args:
-          early_stop_vars: A dict (optional), early stopping attributes on dictionary . Default is None,
-          save_weights_obj: An object (optional), tf.models.Model or tf.Module object save_weights with partial input (path). Default is None.
-          optimizer: A optimizer obj (optional), optimizer options: {'SGD', 'Adagrad', 'Adadelta', 'Adam'}. Default is `SGD`,
-          clip_norm: A float (optional). Default is 0.0 .
+          early_stop_vars (`dict`): early stopping attributes on dictionary . Default is None,
+          save_weights_obj (`object`): save weights with partial input (path). Default is None.
+          optimizer (`object`): optimizer object: e.g. :{'SGD', 'Adagrad', 'Adadelta', 'Adam'}. Default is `SGD`,
+          clip_norm (`float`): clip normalization,  Default is 0.0 .
         """
         super(Trainer, self).__init__(dataset)
 
         if optimizer is None:
-            self.__optimizer = SGD()
+            self.__optimizer = tf.keras.optimizers.SGD()
         else:
             self.__optimizer = optimizer
 
@@ -464,31 +464,31 @@ class Trainer(History):
             self.__early_stop = EarlyStopping(early_stop_vars, save_weights_obj)
         self.__epochs_cnt = 0
 
-    def set_lr_rate(self, lr):
+    def set_lr_rate(self, learning_rate: float):
         """
         Learning rate setter.
 
         Args:
-          lr: A float, new learning rate.
+          learning_rate (`float`): new learning rate.
 
         """
-        self.__optimizer.lr.assign(lr)
+        self.__optimizer.lr.assign(learning_rate)
 
     def set_clip_norm(self, clip_norm):
         """
         Gradient clipping setter.
 
         Args:
-          clip_norm: A float, new gradient clipping (normalization method).
+          clip_norm (`float`): new gradient clipping (normalization method).
         """
         self.__clip_norm = clip_norm
 
-    def set_early_stop(self, early_stop_vars):
+    def set_early_stop(self, early_stop_vars: dict):
         """
         Early stopping setter.
 
         Args:
-          early_stop_vars: A dict, new early stopping parameters.
+          early_stop_vars (`dict`): new early stopping parameters.
 
         """
         self.__early_stop = EarlyStopping(early_stop_vars, None)
@@ -523,14 +523,17 @@ class BaseNeuralNetwork(Trainer):
       __status: A list, a nested list for input/output of model (see MetricLossBase for details),
     """
 
-    def __init__(self, status, dataset, early_stop_vars=None, weights_outfile=None, optimizer=None, clip_norm=0.0):
+    def __init__(self, status: list, dataset: object, early_stop_vars: dict = None, weights_outfile: list = None,
+                 optimizer: object = None, clip_norm: float = 0.0):
         """
         Args:
-          status: A list, a nested list for input/output of model (see MetricLossBase for details),
-          early_stop_vars: A dict (optional), early stopping attributes on dictionary . Default is None,
-          weights_outfile: A list (optional), a list of sub-paths. The first sub-path is the root folder for weights and
-                          the second sub-path is the name of the best weights. All weights file type is `.tf`,
-          optimizer: A optimizer obj (optional), the optimizer where use. Default is `SGD`,
+          status (`list`): a nested list for input/output of model,
+          dataset (`object`): Dataset Object,
+          early_stop_vars (`dict`) : early stopping attributes on dictionary, default is `None`,
+          weights_outfile (`list`): a list of sub-paths. The first sub-path is the root folder for weights and the second
+            sub-path is the name of the best weights. All weights file type is `.tf`, default is `None`,
+          optimizer (`object`): the optimizer where use. Default is `SGD`,
+          clip_norm (`float`): norm gradient cliping, default is `0`.
         """
         save_weights_obj = None
         if weights_outfile is not None:

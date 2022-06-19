@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.keras.layers import LSTM, Dense
 
 
 class FC(tf.Module):
@@ -84,8 +83,8 @@ class Attention(tf.keras.layers.Layer):
     def __init__(self, units):
         super(Attention, self).__init__(name='attention')
 
-        self.fc = Dense(units, activation='tanh')
-        self.V = Dense(1)
+        self.fc = tf.keras.layers.Dense(units, activation='tanh')
+        self.V = tf.keras.layers.Dense(1)
 
     def call(self, deep_features):
         at = self.fc(deep_features)
@@ -110,9 +109,9 @@ class BahdanauAttention(tf.keras.layers.Layer):
     def __init__(self, units):
         super(BahdanauAttention, self).__init__(name='bahdanau_attention')
 
-        self.W1 = Dense(units)
-        self.W2 = Dense(units)
-        self.V = Dense(1)
+        self.W1 = tf.keras.layers.Dense(units)
+        self.W2 = tf.keras.layers.Dense(units)
+        self.V = tf.keras.layers.Dense(1)
 
     def call(self, deep_features, hidden):
         hidden = tf.expand_dims(hidden, 1)
@@ -130,7 +129,7 @@ class LSTM_At(tf.keras.layers.Layer):
     def __init__(self, units, name, activation='tanh'):
         super(LSTM_At, self).__init__(name=name)
 
-        self.lstm1 = LSTM(units, return_sequences=True, activation=activation)
+        self.lstm1 = tf.keras.layers.LSTM(units, return_sequences=True, activation=activation)
         self.at1 = Attention(units)
 
     def call(self, input):

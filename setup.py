@@ -1,6 +1,3 @@
-
-"""Packaging settings."""
-
 from codecs import open
 from os.path import abspath, dirname, join
 
@@ -17,7 +14,7 @@ setup(
     version=__version__,
     description='General driven framework for object-oriented programming on Artificial Intelligence (AI)',
     long_description=long_description,
-    url='https://github.com/efthymis-mcl/algomorphism',
+    url='https://github.com/efth-mcl/algomorphism',
     author='Efthymis Michalis',
     license='MIT',
     classifiers=[
@@ -32,7 +29,6 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
-    # keywords = 'cli',
     packages=['algomorphism',
               'algomorphism.datasets',
               'algomorphism.figures',
@@ -46,6 +42,4 @@ setup(
         'networkx',
         'matplotlib',
     ],
-    # test_suite='nose.collector',
-    # tests_require=['nose'],
 )

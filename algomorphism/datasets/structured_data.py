@@ -1,6 +1,6 @@
 import numpy as np
 from algomorphism.datasets import GraphBaseDataset
-from algomorphism.methods.graphs import vertexes_to_adjacency
+from algomorphism.methods.graphs import vertexes2adjacency
 from typing import List
 
 
@@ -54,7 +54,7 @@ class FromEdgesListExamples(GraphBaseDataset):
             max_d = self.a.shape[1]
         except IndexError:
             max_d = 0
-        a = vertexes_to_adjacency(edges)
+        a = vertexes2adjacency(edges)
         a_tld = self.renormalization(a)
         a_list.append(a)
         atld_list.append(a_tld)

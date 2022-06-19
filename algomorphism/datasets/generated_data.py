@@ -7,7 +7,6 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
-
 # Classification task
 class SimpleGraphsDataset(GraphBaseDataset):
     """
@@ -23,7 +22,7 @@ class SimpleGraphsDataset(GraphBaseDataset):
         - grid.
 
     Attributes:
-        __n_data: number of generated graphs.
+        __n_data (`int`): number of generated graphs.
         __min_n_nodes: the minimum number of vertices.
         __max_n_nodes: the maximum number of vertices.
         __all_graph_types: types of available graphs. list of graphs.
@@ -43,10 +42,10 @@ class SimpleGraphsDataset(GraphBaseDataset):
     def __init__(self, n_data: int, min_n_nodes: int, max_n_nodes: int, graph_types: list = None):
         """
         Args:
-            n_data: number of generated graphs.
-            min_n_nodes: the minimum number of nodes.
-            max_n_nodes: the maximum number of nodes.
-            graph_types: types of graphs to be generated. Default `__all_graphs`:
+            n_data (`int`): number of generated graphs.
+            min_n_nodes (`int`): the minimum number of nodes.
+            max_n_nodes (`int`): the maximum number of nodes.
+            graph_types (`list`): types of graphs to be generated. Default `all_graphs`:
         """
         super(SimpleGraphsDataset, self).__init__()
 
@@ -61,20 +60,21 @@ class SimpleGraphsDataset(GraphBaseDataset):
         self.__min_n_nodes = min_n_nodes
         self.__max_n_nodes = max_n_nodes
 
+        self.__lb = LabelBinarizer()
+
         for graph_type in self.__graph_types:
             assert graph_type in self.__all_graph_types, 'type {} is not included'.format(graph_type)
 
-    def generate_dataset(self, train_per=0.8, val_per=0.1, test_per=0.1):
+    def generate_dataset(self, train_per: float = 0.8, val_per: float = 0.1, test_per: float = 0.1):
         """
 
         Args:
-            train_per: A float, percentage of train examples.
-            val_per: A float, percentage of validation examples.
-            test_per: A float, percentage of test examples.
+            train_per (`float`): percentage of train examples.
+            val_per (`float`): percentage of validation examples.
+            test_per (`float`): percentage of test examples.
         """
         a, atld, x, label_list = self.__generate_data()
 
-        self.__lb = LabelBinarizer()
         self.__lb .fit(label_list)
         one_hot_labels = self.__lb .transform(label_list)
 
@@ -191,7 +191,6 @@ class SimpleGraphsDataset(GraphBaseDataset):
         return g, graph_label
 
 
-# Zero Shot Learning task
 class BubbleDataset(object):
     """
     Bubble dataset: Simple Dataset for Zero-Shot Learning task. Generate 5 types of cluster points:
@@ -202,11 +201,11 @@ class BubbleDataset(object):
         - bottom right.
 
     Attributes:
-        data_dict: A dictionery, per class (root key) contains class emneding "class_emb" and data examples "x".
-        train: A `tf.data.Dataset` object,
-        val: A `SeenUNseenBase` object,
-        test: A `SeenUnseenBase` object,
-        __lb: A `LabelBinarizer` object.
+        data_dict (`dict`): A dictionery, per class (root key) contains class emneding "class_emb" and data examples "x".
+        train (`object`): A `tf.data.Dataset` object,
+        val (`SeenUnseenBase`): a seen unseen base object,
+        test (`SeenUnseenBase`): a seen unseen base object,
+        lb (`LabelBinarizer`): a label binarizer object.
 
     Examples:
         >>> n_data = 1000
@@ -227,17 +226,17 @@ class BubbleDataset(object):
         ...     unseen_classes=unseen_classes,
         ...     sigma=sigma)
     """
-    def __init__(self, n_data=5000, train_per=0.6, val_per=0.3, test_per=0.1, seen_classes=None, unseen_classes=None,
-                 sigma=1.0):
+    def __init__(self, n_data: int = 5000, train_per: int = 0.6, val_per: int = 0.3, test_per: int = 0.1,
+                 seen_classes: list = None, unseen_classes: list = None, sigma: int = 1.0):
         """
         Args:
-            n_data: A int, number of examples,
-            train_per: A float, percentage of train examples,
-            val_per: A float, percentage of validation examples,
-            test_per: A float, percentage of test examples,
-            seen_classes: A list, seen classes. Default is ['top_left', 'top_right', 'bottom_left', 'bottom_right'],
-            unseen_classes: A list, unseen classes. Default is ['middle'],
-            sigma: A float, the variance of data points.
+            n_data (`int`): number of examples,
+            train_per (`int`): percentage of train examples,
+            val_per (`int`): percentage of validation examples,
+            test_per (`int`): percentage of test examples,
+            seen_classes (`list`): seen classes. Default is ['top_left', 'top_right', 'bottom_left', 'bottom_right'],
+            unseen_classes (`list`): unseen classes. Default is ['middle'],
+            sigma (`float`): the variance of data points.
         """
         class_names = ['top_left', 'top_right', 'middle', 'bottom_left', 'bottom_right']
         class_embeddings = np.array([
