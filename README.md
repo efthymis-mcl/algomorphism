@@ -1,10 +1,9 @@
-# Algomorphism
+# AlgoMorphism
 
 ## Description & Deep Learning Experiment
-Algomorphism is a framework for Deep Learning (subspace of AI) experiments using as base Object-Oriented Programming (OOP). Illustrating the parts of experiment as objects. A Deep Learning experiment has three parts:
-1. Dataset Object
-2. Cost/Score Object(s)
-3. Model Object
+AlgoMorphism (AM) is a general driven framework for Object-Oriented Programing (OOP) on Back-Propagation Optimization 
+algorithm. Defining an optimization experiment using objects. Object examples could be Dataset Object (DO) or input of 
+experiment and Model Object (MO) which is optimized.
 
 Firstly at an experiment call or develop a custom Dataset Object (DO), every DO has 1 to 3 elements:
 - rain element: train batched examples,
