@@ -37,7 +37,7 @@ In this learning experiment we try to classify using Graph Constitutional Networ
 ### Configure and call the generated \`Simple Graph Dataset\`
 
 ```python
-import algomorphis as am
+import algomorphism as am
 import tensorflow as tf
 
 examples = 500
@@ -47,46 +47,48 @@ graph_types = ['cycle', 'star', 'wheel', 'complete', 'lollipop',
                 'hypercube', 'circular_ladder', 'grid']
 
 n_c = len(graph_types)
-g_dataset = am.datasets.generated_data.SimpleGraphsDataset(examples, n_nodes_min, n_nodes_max, graph_types)
+g_dataset = am.dataset.datasets.generate.SimpleGraphsDataset(examples, n_nodes_min, n_nodes_max, graph_types)
 a_train = g_dataset.get_train_data()
 a_dim = a_train.shape[1]
 ```
 
 ### Illustrate a custom \`Graph Convolutional Classifier\` MO
 ```python
-class GraphConvolutionalClassifier(tf.Module, am.base.BaseNeuralNetwork):
+import algomorphism as am
+import tensorflow as tf
+class GraphConvolutionalClassifier(tf.Module, am.model.base.BaseNeuralNetwork):
   def __init__(self):
     tf.Module.__init__(self, name='gcn_classifer')
     status = [
       [0],
       [1, 2]
     ]
-    self.score_mtr = am.base.MetricBase(self,
-      [ScoreMetricObject()],
+    self.score_mtr = am.model.base.MetricBase(self,
+      [tf.keras.metrics.CategoricalAccuracy()],
       status=status,
       mtr_select=[0]
     )
 
-    self.cost_mtr = am.base.MetricBase(self,
-      [CostMetricObject()],
+    self.cost_mtr = am.model.base.MetricBase(self,
+      [tf.keras.metrics.CategoricalCrossentropy()],
       status=status,
       mtr_select=[0],
       status_out_type=1
     )
     
-    self.cost_loss = am.base.LossBase(self,
-      [CostLossObject()],
+    self.cost_loss = am.model.base.LossBase(self,
+      [tf.keras.losses.CategoricalCrossentropy()],
       status=status,
       loss_select=[0]
     )
     
-    am.base.BaseNeuralNetwork(status, g_dataset)
+    am.model.base.BaseNeuralNetwork(status, g_dataset)
     
-    self.gcn1 = am.layers.GCN(a_dim, 32)
-    self.gcn2 = am.layers.GCN(32, 64)
+    self.gcn1 = am.model.layers.GCN(a_dim, 32)
+    self.gcn2 = am.model.layers.GCN(32, 64)
     
     self.flatten = tf.keras.layers.Flatten()
-    self.out = am.layers.FC(a_dim*64, n_c, 'softmax')
+    self.out = am.model.FC(a_dim*64, n_c, 'softmax')
 
   def __call__(self, inputs):
     x = self.gcn1(inputs[0], inputs[1])
@@ -106,5 +108,5 @@ gcn.train(g_dataset, epochs=150, print_types=['train', 'val'])
 
 ### Plot History
 ```python
-am.figures.nn.multiple_models_history_figure([gcn])
+am.figure.opt.multiple_models_history_figure([gcn])
 ```
