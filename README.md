@@ -54,8 +54,6 @@ a_dim = a_train.shape[1]
 
 ### Illustrate a custom \`Graph Convolutional Classifier\` MO
 ```python
-import algomorphism as am
-import tensorflow as tf
 class GraphConvolutionalClassifier(tf.Module, am.model.base.BaseNeuralNetwork):
   def __init__(self):
     tf.Module.__init__(self, name='gcn_classifer')
