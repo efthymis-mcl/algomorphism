@@ -1,8 +1,13 @@
+# author: Efthymis Michalis
+
 from typing import List
 import numpy as np
 
 
 class GraphBaseDataset(object):
+    """
+
+    """
     def __int__(self):
         pass
 

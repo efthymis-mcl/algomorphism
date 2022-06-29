@@ -1,9 +1,11 @@
+# author: Efthymis Michalis
+
 from typing import Union, Tuple
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from tensorflow import Tensor
-from algomorphism.base import BaseNeuralNetwork
+from algomorphism.model.base import BaseNeuralNetwork
 
 
 def sift_point_to_best(target_point: Union[np.ndarray, Tensor], point: Union[np.ndarray, Tensor], sift_dist: float) -> Tuple[Union[np.ndarray, Tensor], Union[np.ndarray, Tensor]]:
@@ -16,7 +18,7 @@ def sift_point_to_best(target_point: Union[np.ndarray, Tensor], point: Union[np.
         sift_dist (`float`): distance where point will sift to new one.
 
     Returns:
-        `Tuple[Union[np.ndarray, Tensor], Union[np.ndarray, Tensor]]`: new_points, a couple of new updated points.
+        (`Tuple[Union[np.ndarray, Tensor], Union[np.ndarray, Tensor]]`): new_points, a couple of new updated points.
 
     References:
         https://en.wikipedia.org/wiki/Jensen%27s_inequality
@@ -34,7 +36,7 @@ def sift_point_to_best(target_point: Union[np.ndarray, Tensor], point: Union[np.
 
 def pca_denoising(p_examples: Union[np.ndarray, Tensor], pca_emb_examples: Union[np.ndarray, Tensor],
                   pca_emb_pred: Union[np.ndarray, Tensor], knn: KNeighborsClassifier, knn_pca: KNeighborsClassifier,
-                  dx: int = 0, dy: int = 1):
+                  dx: int = 0, dy: int = 1) -> Union[np.ndarray, Tensor]:
     """
     PCA de-nosing method.
 
@@ -48,7 +50,7 @@ def pca_denoising(p_examples: Union[np.ndarray, Tensor], pca_emb_examples: Union
         dy (`int`): index dimension of y-axis.
 
     Returns:
-        pca_emb_pred: A ndarray or tensor, low dimensional updated pca data embeddings of prediction.
+        (`Union[np.ndarray, Tensor]`): low dimensional updated pca data embeddings of prediction.
 
     See Also:
         After pca process the real distance between pca examples and pca embeddings have noise by dimension reduction.
@@ -119,6 +121,6 @@ def three_d_identity_matrix(n: int) -> np.ndarray:
         n (`int`): size of 3d matrix.
 
     Returns:
-        `np.ndarray`: 3D identity matrix.
+        (`np.ndarray`): 3D identity matrix.
     """
     return np.array([[[1 if i == j and j == w else 0 for i in range(n)] for j in range(n)] for w in range(n)])

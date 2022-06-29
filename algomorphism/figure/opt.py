@@ -1,10 +1,12 @@
+# author: Efthymis Michalis
+
 import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 from typing import Union, List
-from algomorphism.base import BaseNeuralNetwork
+from algomorphism.model.base import BaseNeuralNetwork
 
 
 def pca_denoising_figure(pca_predicted_types: list, pca_emb: np.ndarray, knn_pca: KNeighborsClassifier,

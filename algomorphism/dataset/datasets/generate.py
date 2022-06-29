@@ -1,13 +1,16 @@
+# author: Efthymis Michalis
+
 import networkx as nx
 import numpy as np
 import random
 import math
-from algomorphism.datasets import GraphBaseDataset, SeenUnseenBase
+from algomorphism.dataset.zeroshot.base import SeenUnseenBase
+from algomorphism.dataset.graph.base import GraphBaseDataset
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
-# Classification task
+
 class SimpleGraphsDataset(GraphBaseDataset):
     """
     Get disjoint matrix of a given number of graphs with random range $[min_nn, max_nn]$. The outcome is disjoint

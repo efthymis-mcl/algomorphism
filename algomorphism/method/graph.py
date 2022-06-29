@@ -1,9 +1,11 @@
+# author: Efthymis Michalis
+
 import numpy as np
 import networkx as nx
 from typing import Union, List, Tuple
 
 
-def vertexes2adjacency(vertexes):
+def vertexes2adjacency(vertexes: Union[List[List[int]], List[tuple], Tuple[list], Tuple[tuple]]) -> np.ndarray:
     """
     Transform vertexes of graph; list/tuple object to adjaceny matrix.
 
@@ -11,7 +13,7 @@ def vertexes2adjacency(vertexes):
         vertexes (`Union[List[List[int]], List[tuple], Tuple[list], Tuple[tuple]]`): vertexes.
 
     Returns:
-        `np.ndarray`: adjacency matrix.
+        (`np.ndarray`): adjacency matrix.
 
     Examples:
           >>> vrtxs = [[0,1], [1,2], [1,3], [1,4], [1,5]]
@@ -56,7 +58,7 @@ def a2g(a: np.ndarray) -> nx.Graph:
         a (`np.ndarray`): binary adjacency matrix.
 
     Returns:
-        `nx.Graph`: networkx graph object.
+        (`nx.Graph`): networkx graph object.
     """
     g = nx.Graph()
     a = np.where(a == 1)
@@ -75,7 +77,7 @@ def graphs_stats(a_examples: np.ndarray) -> Tuple[int, dict, dict, dict]:
         a_examples (`np.ndarray`): examples of adjency matrix.
 
     Returns:
-        `tuple[int, dict, dict, dict]`:
+        (`tuple[int, dict, dict, dict]`):
             (max_depth): a int, max depth of all graphs for all nodes of bfs tree,
             (depth_dist): a dict, keys are the observable depth of bfs tree (such as 1, 2, 4, 5, ...),
             (maxdepth_dist): a dict, keys are the observable max-depth per node of bfs tree (such as 1, 2, 4, 5, ...),

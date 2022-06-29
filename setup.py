@@ -30,9 +30,10 @@ setup(
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
     packages=['algomorphism',
-              'algomorphism.datasets',
-              'algomorphism.figures',
-              'algomorphism.methods'
+              'algomorphism.dataset',
+              'algomorphism.model',
+              'algomorphism.figure',
+              'algomorphism.method',
     ],
     package_dir={'algomorphism': 'algomorphism'},
     install_requires=[

@@ -1,3 +1,5 @@
+# author: Efthymis Michalis
+
 import tensorflow as tf
 from functools import partial
 
@@ -7,8 +9,8 @@ class WeightedCrossEntropyWithLogits(object):
      Object based on ` tf.nn.weighted_cross_entropy_with_logits ` with normalization parameter.
 
      Attributes:
-        __loss: An object, weighted cross entropy with logits loss object where the weight given as partial,
-       __norm: A float, normalization parameter. This attribute multiply with the outcome of __loss,
+        loss (`object`): weighted cross entropy with logits loss object where the weight given as partial,
+        norm (`float`): A float, normalization parameter. This attribute multiply with the outcome of loss,
     """
 
     def __init__(self, w_p: float, norm: float):
@@ -37,13 +39,13 @@ class WeightedCrossEntropyWithLogits(object):
 
 class MeanSquaredErrorWithLambda(object):
     """
-    Based on ` tf.keras.losses.MeanSquaredError ` object using a $lambda$ parameter where reduce or increase the "strength"
+    Based on `tf.keras.losses.MeanSquaredError` object using a $lambda$ parameter where reduce or increase the "strength"
     of gradient at backpropagation step. A common usage is where adding two types of loss and this loss have different gradient
     and want to balance the gradients. $Lambda$ could be choice with trials or more wise with hyper-parameter search methods.
 
     Attributes:
-        __loss: An object, Mean Square Error (MSE) tf Loss object,
-        __lambda: A float, a parameter where multiplied with __loss on result step.
+        loss: An object, Mean Square Error (MSE) tf Loss object,
+        lambda: A float, a parameter where multiplied with loss on result step.
     """
 
     def __init__(self, lamda: float = 1.0):

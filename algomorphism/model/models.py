@@ -1,7 +1,9 @@
+# author: Efthymis Michalis
+
 import tensorflow as tf
-from .base import BaseNeuralNetwork, MetricBase, LossBase
-from .metrics import WeightedCrossEntropyWithLogits as mWCEL
-from .layers import GCN, IP, FC
+from algomorphism.model.base import BaseNeuralNetwork, MetricBase, LossBase
+from algomorphism.model.metrics import WeightedCrossEntropyWithLogits as mWCEL
+from algomorphism.model.layers import GCN, IP, FC
 
 
 class GAE(tf.Module, BaseNeuralNetwork):

@@ -1,3 +1,5 @@
+# author: Efthymis Michalis
+
 from itertools import product
 from typing import Union, List
 
@@ -109,15 +111,15 @@ class MetricBase(MetricLossBase):
       __mtr: A list, list of metric objects based on ` tf.keras.metric.Metrics `,
       __mtr_idxs: A list, indexes list of status with for output type status,
       __mtr_select: A list, list of indexes of __mtr,
-      __input_idxs: A list, indexes list of input data examples,
+      __input_idxs: A list, indexes list of input data examples.
     """
 
     def __init__(self, model: object, mtrs_obj: List[tf.keras.metrics.Metric], status: list, mtr_select: list, status_out_type: int = 2):
         """
 
         Args:
-          model (`object`): Model Object (MO)
-          mtrs_obj (`List[tf.keras.metrics.Metric]`): list of Metric Objects
+          model (`object`): Model Object (MO),
+          mtrs_obj (`List[tf.keras.metrics.Metric]`): list of Metric Objects,
           status (`list`): nested list of status per data of examples,
           mtr_select (`list`): list of indexes of mtrs_obj,
           status_out_type (`int`): type of output data of examples. Default is 2.
@@ -177,7 +179,7 @@ class LossBase(MetricLossBase):
       __loss: A list, list of losses objects based on ` tf.keras.loeses.Loss `,
       __loss_idxs: A list, indexes list of status with for output type status,
       __loss_select: A list, list of indexes of __loss,
-      __input_idxs: A list, indexes list of input data examples,
+      __input_idxs: A list, indexes list of input data examples.
     """
 
     def __init__(self, model: object, losses_obj: list, status: list, loss_select: list):

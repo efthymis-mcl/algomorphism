@@ -1,6 +1,8 @@
+# author: Efthymis Michalis
+
 import numpy as np
-from algomorphism.datasets import GraphBaseDataset
-from algomorphism.methods.graphs import vertexes2adjacency
+from algomorphism.dataset.graph.base import GraphBaseDataset
+from algomorphism.method.graph import vertexes2adjacency
 from typing import List
 
 
