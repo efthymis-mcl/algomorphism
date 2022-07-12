@@ -1,6 +1,9 @@
 # AlgoMorphism
 
-## Description & Deep Learning Experiment
+<img src="pictures/am_logo.png" width="250" height="100%">
+
+## Description & Back Propagation Experiment
+
 AlgoMorphism (AM) is a general driven framework for Object-Oriented Programing (OOP) on Back-Propagation Optimization 
 algorithm. Defining an optimization experiment using objects. Object examples could be Dataset Object (DO) or input of 
 experiment and Model Object (MO) which is optimized.
