@@ -12,7 +12,7 @@ with open(join(this_dir, 'README.md'), encoding='utf-8') as file:
 setup(
     name='algomorphism',
     version=__version__,
-    description='General driven framework for object-oriented programming on Artificial Intelligence (AI)',
+    description='General driven framework for object-oriented programming on Back-Propagation Algorithm',
     long_description=long_description,
     url='https://github.com/efth-mcl/algomorphism',
     author='Efthymis Michalis',
