@@ -1,3 +1,7 @@
 # author: Efthymis Michalis
 
-from . import base
+try:
+    from . import base
+except ImportError as ie:
+    pass
+

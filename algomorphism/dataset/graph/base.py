@@ -1,26 +1,28 @@
 # author: Efthymis Michalis
 
-from typing import List
+from typing import List, Tuple
 import numpy as np
 
 
 class GraphBaseDataset(object):
     """
-
+    Graph Base Dataset
     """
     def __int__(self):
         pass
 
     @staticmethod
-    def numpy_to_mega_batch(x_list, a_list):
+    def numpy_to_mega_batch(x_list: List[np.ndarray], a_list: List[np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
         """
         List of numpy arrays to mega batch array.
 
         Args:
-            x_list (`list[np.ndarray]`): feature matrixes.
-            a_list (`list[np.ndarray]`): adjency matrixes.
+            x_list (`List[np.ndarray]`): feature matrixes.
+            a_list (`List[np.ndarray]`): adjency matrixes.
+
         Returns:
-            `tuple[np.ndarray, np.ndarray]`: batched x, a lists
+            (`Tuple[np.ndarray, np.ndarray]`): batched x, a lists
+
         Examples:
 
             >>> graph_base = GraphBaseDataset()
@@ -32,7 +34,6 @@ class GraphBaseDataset(object):
             >>> print(x.shape)
             (12, 6, 4)
         """
-
         def a_post_concat(a):
             a_con = np.concatenate([a, np.zeros((a.shape[0], max_d - a.shape[1]))], axis=1)
             a_con = np.concatenate([a_con, np.zeros((max_d - a_con.shape[0], a_con.shape[1]))], axis=0)
@@ -57,14 +58,14 @@ class GraphBaseDataset(object):
         return mega_batch_x, mega_batch_a
 
     @staticmethod
-    def numpy_to_disjoint(x_list, a_list):
+    def numpy_to_disjoint(x_list: List[np.ndarray], a_list: List[np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
         """
         Args:
             x_list (`List[np.ndarray]`): feature matrixes,
             a_list (`List[np.ndarray]`): adajence matrixes.
 
         Returns:
-            `tuple[np.ndarray, np.ndarray]`: disjoint matrixes of x_list, a_list.
+            (`Tuple[np.ndarray, np.ndarray]`): disjoint matrixes of x_list, a_list.
 
         Examples:
             >>> x_list = [np.random.rand(6,4) for _ in range(6)]+[np.random.rand(3,4) for _ in range(6)]
@@ -95,15 +96,15 @@ class GraphBaseDataset(object):
         return x_disjoint, a_disjoint
 
     @staticmethod
-    def renormalization(a):
+    def renormalization(a: np.ndarray) -> np.ndarray:
         """
         Give an adjacency matrix and returns the renormalized.
 
         Args:
-            a: A ndarray, adjacency matrix.
+            a (`np.ndarray`), adjacency matrix.
 
         Returns:
-            atld: A ndarray, renormalized adjacency matrix.
+            (`np.ndarray`) , renormalized adjacency matrix.
 
         Examples:
             >>> grapbase = GraphBaseDataset()
@@ -118,7 +119,6 @@ class GraphBaseDataset(object):
             Thomas N. Kipf, Max Welling. Semi-supervised classification with graph convolutional networks,
             https://arxiv.org/pdf/1609.02907.pdf
         """
-
         ai = a + np.eye(a.shape[-1])
         degree = np.sum(ai, axis=-1)
         degree = np.eye(a.shape[-1]) * degree
@@ -128,5 +128,3 @@ class GraphBaseDataset(object):
         atld = np.matmul(degree_inv, ai)
         atld = np.matmul(atld, degree_inv)
         return atld
-
-

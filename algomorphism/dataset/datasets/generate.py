@@ -15,14 +15,8 @@ class SimpleGraphsDataset(GraphBaseDataset):
     """
     Get disjoint matrix of a given number of graphs with random range $[min_nn, max_nn]$. The outcome is disjoint
     matrix created by random uncycle graph. Default graph types:
-        - cycle,
-        - star,
-        - wheel,
-        - complete,
-        - lollipop
-        - hypercube
-        - circular_ladder,
-        - grid.
+
+    [cycle, star, wheel, complete, lollipop, hypercube, circular_ladder, grid]
 
     Attributes:
         __n_data (`int`): number of generated graphs.
@@ -197,11 +191,8 @@ class SimpleGraphsDataset(GraphBaseDataset):
 class BubbleDataset(object):
     """
     Bubble dataset: Simple Dataset for Zero-Shot Learning task. Generate 5 types of cluster points:
-        - top left,
-        - top right,
-        - middle,
-        - bottom left,
-        - bottom right.
+
+    ['top left', 'top right', 'middle', 'bottom left', 'bottom right']
 
     Attributes:
         data_dict (`dict`): A dictionery, per class (root key) contains class emneding "class_emb" and data examples "x".

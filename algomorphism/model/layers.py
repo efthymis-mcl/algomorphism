@@ -7,15 +7,23 @@ class FC(tf.Module):
     """
     Full Connected layer.
     """
-    def __init__(self, in_features, out_features, activation=None):
+    def __init__(self, in_features, out_features, activation=None, weights_initializer=None, bias_initializer=None):
         super(FC, self).__init__(name="fc")
+        if weights_initializer is None:
+            weights_initializer = tf.keras.initializers.GlorotNormal()
+
+        if bias_initializer is None:
+            bias_initializer = tf.keras.initializers.GlorotNormal()
+
+        weights = weights_initializer(shape=[in_features, out_features])
+        bias = bias_initializer(shape=[out_features])
 
         self.weights = tf.Variable(
-            tf.keras.initializers.GlorotUniform()(shape=[in_features, out_features]),
+            weights,
             name='weights'
         )
         self.bias = tf.Variable(
-            tf.keras.initializers.GlorotUniform()(shape=[out_features]),
+            bias,
             name='bias'
         )
         self.activation = tf.keras.activations.get(activation)

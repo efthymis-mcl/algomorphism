@@ -1,3 +1,7 @@
 # author: Efthymis Michalis
 
-from . import base, layers, losses, metrics, models
+try:
+    from . import base, layers, losses, metrics, models
+except ImportError as ie:
+    pass
+

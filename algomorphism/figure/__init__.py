@@ -1,4 +1,6 @@
 # author: Efthymis Michalis
 
-from . import opt
-from . import graph
+try:
+    from . import opt, graph
+except ImportError as ie:
+    pass

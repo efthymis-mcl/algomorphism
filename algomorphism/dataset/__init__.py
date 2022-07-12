@@ -1,3 +1,7 @@
 # author: Efthymis Michalis
 
-from . import graph, datasets, zeroshot
+try:
+    from . import raph, datasets, zeroshot
+except ImportError as ie:
+    pass
+

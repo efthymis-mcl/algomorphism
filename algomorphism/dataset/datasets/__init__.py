@@ -1,3 +1,7 @@
 # author: Efthymis Michalis
 
-from . import generate, structure
+try:
+    from . import generate, structure
+except ImportError as ie:
+    pass
+
