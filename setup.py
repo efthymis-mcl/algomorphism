@@ -2,6 +2,7 @@ from codecs import open
 from os.path import abspath, dirname, join
 
 from distutils.core import setup
+from setuptools import find_packages
 
 from algomorphism import __version__
 
@@ -23,12 +24,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    packages=['algomorphism',
-              'algomorphism.dataset',
-              'algomorphism.model',
-              'algomorphism.figure',
-              'algomorphism.method',
-    ],
+    packages=find_packages(),
     package_dir={'algomorphism': 'algomorphism'},
     install_requires=[
         'tensorflow',
