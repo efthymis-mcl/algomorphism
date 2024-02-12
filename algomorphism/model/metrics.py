@@ -4,6 +4,114 @@ import tensorflow as tf
 from functools import partial
 
 
+class ConfusionMatrix(tf.keras.metrics.Metric):
+    def __init__(self, name='cm'):
+        super(ConfusionMatrix, self).__init__(name=name)
+        self.__cm_sum = self.add_weight(name='cm_sum', initializer='zeros')
+    
+    @tf.autograph.experimental.do_not_convert
+    def update_state(self, y_true, y_pred):
+        cm = self.current_confusion_matrix(y_true, y_pred)
+        self.__cm_sum.assign_add(cm)
+    
+    @tf.autograph.experimental.do_not_convert
+    def result(self):
+        return self.__cm_sum
+    
+    def reset_states(self):
+        self.__cm_sum.assign(0)
+    
+    def current_confusion_matrix(self, y_true, y_pred):
+        y_pred_mask = tf.math.reduce_max(y_pred, -1, keepdims=True)
+        y_pred_mask = tf.cast(y_pred == y_pred_mask, tf.float32)
+
+        cm = tf.matmul(y_true, y_pred_mask, transpose_a=True)
+        return cm
+
+
+class CategoricalPrecision(ConfusionMatrix):
+    def __init__(self, name='cp'):
+        super(CategoricalPrecision, self).__init__(name=name)
+        self.__pr_sum = self.add_weight(name='pr_sum', initializer='zeros')
+    
+    @tf.autograph.experimental.do_not_convert
+    def update_state(self, y_true, y_pred):
+        precision = self.current_precision(y_true, y_pred)
+        self.__pr_sum.assign_add(precision)
+    
+    @tf.autograph.experimental.do_not_convert
+    def result(self):
+        return self.__pr_sum
+    
+    def reset_states(self):
+        self.__pr_sum.assign(0)
+
+    def current_precision(self, y_true, y_pred):
+        cm = self.current_confusion_matrix(y_true, y_pred)
+        true_positive = tf.reduce_sum([cm[i, i] for i in range(cm.shape[0])])
+        false_positive = tf.reduce_sum([cm[i, j] for i in range(cm.shape[0]) for j in range(i)])
+        precision = true_positive / (true_positive + false_positive)
+        return precision
+
+
+class CategoricalRecall(ConfusionMatrix):
+    def __init__(self, name='cr'):
+        super(CategoricalRecall, self).__init__(name=name)
+        self.__rl_sum = self.add_weight(name='rl_sum', initializer='zeros')
+    
+    @tf.autograph.experimental.do_not_convert
+    def update_state(self, y_true, y_pred):
+        recall = self.current_recall(y_true, y_pred)
+        self.__rl_sum.assign_add(recall)
+    
+    @tf.autograph.experimental.do_not_convert
+    def result(self):
+        return self.__rl_sum
+    
+    def reset_states(self):
+        self.__rl_sum.assign(0)
+
+    def current_recall(self, y_true, y_pred):
+        cm = self.current_confusion_matrix(y_true, y_pred)
+        print(cm)
+        true_positive = tf.reduce_sum([cm[i, i] for i in range(cm.shape[0])])
+        false_negative = tf.reduce_sum([cm[i, j] for j in range(cm.shape[0]) for i in range(j)])
+        recall = true_positive / (true_positive + false_negative)
+        return recall
+
+
+class CategoricalF1Score(ConfusionMatrix):
+    def __init__(self, name='f1'):
+        super(CategoricalF1Score, self).__init__(name=name)
+        self.__f1_sum = self.add_weight(name='f1_sum', initializer='zeros')
+        self.__n = 0.0
+
+    @tf.autograph.experimental.do_not_convert
+    def update_state(self, y_true, y_pred):
+        if len(y_true.shape) > 1 and len(y_pred.shape) > 1:
+                 y_true = tf.reshape(y_true, (tf.reduce_prod(y_true.shape[:-1]), y_true.shape[-1]))
+                 y_pred = tf.reshape(y_pred, (tf.reduce_prod(y_pred.shape[:-1]), y_pred.shape[-1]))
+        f1 = self.current_f1(y_true, y_pred)
+        self.__n += 1
+        self.__f1_sum.assign_add(f1)
+    
+    @tf.autograph.experimental.do_not_convert
+    def result(self):
+        return self.__f1_sum / self.__n
+
+    def reset_states(self):
+        self.__n = 0
+        self.__f1_sum.assign(0)
+
+    def current_f1(self, y_true, y_pred):
+        cm = self.current_confusion_matrix(y_true, y_pred)
+        true_positive = tf.reduce_sum([cm[i, i] for i in range(cm.shape[0])])
+        false_negative = tf.reduce_sum([cm[i, j] for j in range(cm.shape[0]) for i in range(j)])
+        false_positive = tf.reduce_sum([cm[i, j] for i in range(cm.shape[0]) for j in range(i)])
+        f1 = 2 * true_positive / (2 * true_positive + false_positive + false_negative)
+        return f1
+
+
 class WeightedCrossEntropyWithLogits(tf.keras.metrics.Metric):
     """
     Object based on `tf.nn.weighted_cross_entropy_with_logits` with normalization parameter.
@@ -261,6 +369,7 @@ class ClassWeightedCategoricalCrossEntropy(tf.keras.metrics.Metric):
         self.__class_weights = class_weights
         self.__mean = tf.keras.metrics.Mean()
 
+    @tf.autograph.experimental.do_not_convert
     def update_state(self, y_true: tf.Tensor, y_pred: tf.Tensor):
         """
         Compute batch Categorical Cross Entropy loss and update_mean.
@@ -275,6 +384,7 @@ class ClassWeightedCategoricalCrossEntropy(tf.keras.metrics.Metric):
         loss = -tf.reduce_sum(loss, axis=-1)
         self.__mean.update_state(loss)
 
+    @tf.autograph.experimental.do_not_convert
     def result(self) -> tf.Tensor:
         """
         Result of current loss summation over batches.

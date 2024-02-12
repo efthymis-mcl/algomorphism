@@ -64,11 +64,12 @@ def pca_denoising_figure(pca_predicted_types: list, pca_emb: np.ndarray, knn_pca
         plt.show()
 
 
-def multiple_models_history_figure(nn_models: List[BaseNeuralNetwork], figsize: Union[tuple, list] = (16, 8), legend_fontsize: int = 18, axes_label_fondsize: int = 22,
+def multiple_models_history_figure(nn_models: List[BaseNeuralNetwork], example_types: Union[tuple, list] = None, figsize: Union[tuple, list] = (16, 8), legend_fontsize: int = 18, axes_label_fondsize: int = 22,
                                    ticks_fontsize: int = 16, save_obj: list = None):
     """
     Args:
         nn_models (`List[BaseNeuralNetwork]`): list of Model Object(s),
+        example_types Union[tuple, list]: types of examples to plot (e.g. 'test'), default is all,
         figsize (`Union[tuple, list]`): figure size of x and y axis,
         legend_fontsize (`int`): legend font size
         axes_label_fondsize (`int`): axis label fontsize
@@ -82,6 +83,8 @@ def multiple_models_history_figure(nn_models: List[BaseNeuralNetwork], figsize: 
             return sub_word
         else:
             return None
+
+    example_types = example_types if example_types is not None else ['train', 'val', 'test']
 
     plot_idx_dict = {
         'cost': 1,
@@ -106,22 +109,23 @@ def multiple_models_history_figure(nn_models: List[BaseNeuralNetwork], figsize: 
             for k, v in nn_model.history.items():
                 if any(v):
                     k_split = k.split('_')
-                    for ks in k_split:
-                        plt_idx = plot_idx_dict.get(ks)
-                        if plt_idx is not None:
-                            plt.subplot(1, max_n_plots, plt_idx)
-                            klabel = copy.deepcopy(k_split)
-                            if ks != 'harmonic':
-                                klabel.remove(ylabel_idx_dict[plt_idx])
-                            klabel = '$\,$'.join(klabel)
-                            plt.plot(v.keys(), v.values(), label='{}: {}'.format(nn_model.name, klabel))
+                    if k_split[0] in example_types:
+                        for ks in k_split:
+                            plt_idx = plot_idx_dict.get(ks)
+                            if plt_idx is not None:
+                                plt.subplot(1, max_n_plots, plt_idx)
+                                klabel = copy.deepcopy(k_split)
+                                if ks != 'harmonic':
+                                    klabel.remove(ylabel_idx_dict[plt_idx])
+                                klabel = '$\,$'.join(klabel)
+                                plt.plot(v.keys(), v.values(), label='{}: {}'.format(nn_model.name, klabel))
 
-                            plt.xlabel(r"$\# \, of \, epochs$", fontsize=axes_label_fondsize)
-                            plt.ylabel(r'${}$'.format(ylabel_idx_dict[plt_idx]), fontsize=axes_label_fondsize)
-                            plt.legend(fontsize=legend_fontsize)
-                            plt.xticks(fontsize=ticks_fontsize)
-                            plt.yticks(fontsize=ticks_fontsize)
-                            break
+                                plt.xlabel(r"$\# \, of \, epochs$", fontsize=axes_label_fondsize)
+                                plt.ylabel(r'${}$'.format(ylabel_idx_dict[plt_idx]), fontsize=axes_label_fondsize)
+                                plt.legend(fontsize=legend_fontsize)
+                                plt.xticks(fontsize=ticks_fontsize)
+                                plt.yticks(fontsize=ticks_fontsize)
+                                break
         if save_obj is not None:
             plt.savefig('{}/{}.eps'.format(*save_obj), format='eps')
         else:

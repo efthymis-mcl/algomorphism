@@ -3,12 +3,12 @@
 import tensorflow as tf
 
 
-class FC(tf.Module):
+class FullConnected(tf.Module):
     """
     Full Connected layer.
     """
-    def __init__(self, in_features, out_features, activation=None, weights_initializer=None, bias_initializer=None):
-        super(FC, self).__init__(name="fc")
+    def __init__(self, in_features, out_features, activation=None, weights_initializer=None, bias_initializer=None, name="fc"):
+        super(FullConnected, self).__init__(name=name)
         if weights_initializer is None:
             weights_initializer = tf.keras.initializers.GlorotNormal()
 
@@ -34,14 +34,12 @@ class FC(tf.Module):
         return x
 
 
-class GCN(tf.Module):
+class GraphConv(tf.Module):
     """
     Graph Convolutional Layer
     """
-    def __init__(self, in_features, out_features, activation=None, name=None):
-        if name is None:
-            name = "gcn"
-        super(GCN, self).__init__(name=name)
+    def __init__(self, in_features, out_features, activation=None, name="gcn"):
+        super(GraphConv, self).__init__(name=name)
 
         self.weights = tf.Variable(
             tf.keras.initializers.GlorotUniform()(shape=[in_features, out_features]),
@@ -60,12 +58,12 @@ class GCN(tf.Module):
         return x
 
 
-class IP(tf.Module):
+class InnerProduct(tf.Module):
     """
     Inner Product layer (weights is optional)
     """
-    def __init__(self, in_features=None, activation=None):
-        super(IP, self).__init__(name='ip')
+    def __init__(self, in_features=None, activation=None, name="ip"):
+        super(InnerProduct, self).__init__(name=name)
         self.weights = None
         if in_features is not None:
             self.weights = tf.Variable(
@@ -82,67 +80,69 @@ class IP(tf.Module):
         return x
 
 
-class Attention(tf.keras.layers.Layer):
+class Attention(tf.Module):
     """
-    Attention Mechanism layer.
+    Attention layer.
 
     References:
         - Attention Is All You Need: https://arxiv.org/abs/1706.03762
     """
+    def __init__(self, name="attention"):
+        super(Attention, self).__init__(name=name)
 
-    def __init__(self, units):
-        super(Attention, self).__init__(name='attention')
-
-        self.fc = tf.keras.layers.Dense(units, activation='tanh')
-        self.V = tf.keras.layers.Dense(1)
-
-    def call(self, deep_features):
-        at = self.fc(deep_features)
-        at = self.V(at)
-
-        at = tf.nn.softmax(at, axis=1)
-
-        at = tf.multiply(at, deep_features)
-
-        at = tf.reduce_sum(at, axis=-2)
-
-        return at
+    def __call__(self, q, k, v):
+        y = tf.matmul(q, k, transpose_b=True)
+        dk = tf.cast(k.shape[-1], tf.float32)
+        norm = tf.sqrt(dk)
+        y = y / norm
+        y = tf.nn.softmax(y)
+        y = tf.matmul(y, v)
+        return y
 
 
-class BahdanauAttention(tf.keras.layers.Layer):
+class MultiHeadAttention(tf.Module):
     """
+    Multi Head Attention layer.
 
     References:
-        - End-to-End Attention-based Large Vocabulary Speech Recognition: https://arxiv.org/abs/1508.04395
-        - Bahdanau Attention implantation: https://www.tensorflow.org/text/tutorials/nmt_with_attention
+        - Attention Is All You Need: https://arxiv.org/abs/1706.03762
     """
-    def __init__(self, units):
-        super(BahdanauAttention, self).__init__(name='bahdanau_attention')
+    def __init__(self, feature_dim, attention_dims, n_heads, name="multi_head_attention"):
+        super(MultiHeadAttention, self).__init__(name=name)
 
-        self.W1 = tf.keras.layers.Dense(units)
-        self.W2 = tf.keras.layers.Dense(units)
-        self.V = tf.keras.layers.Dense(1)
+        k_dim = attention_dims[0]
+        v_dim = attention_dims[1]
+        self.n_heads = n_heads
+        self.attention = Attention()
+        
+        weight_initializer = tf.keras.initializers.GlorotNormal()
 
-    def call(self, deep_features, hidden):
-        hidden = tf.expand_dims(hidden, 1)
-        at = tf.nn.tanh(tf.add(self.W1(deep_features), self.W1(hidden)))
-        at = self.V(at)
-
-        at = tf.nn.softmax(at, axis=1)
-        at = tf.multiply(at, deep_features)
-        at = tf.reduce_sum(at, axis=-2)
-
-        return at
-
-
-class LSTM_At(tf.keras.layers.Layer):
-    def __init__(self, units, name, activation='tanh'):
-        super(LSTM_At, self).__init__(name=name)
-
-        self.lstm1 = tf.keras.layers.LSTM(units, return_sequences=True, activation=activation)
-        self.at1 = Attention(units)
-
-    def call(self, input):
-        x = self.lstm1(input)
-        y = self.at1(x)
+        for i in range(self.n_heads):
+            wqi = weight_initializer(shape=[feature_dim, k_dim])
+            wki = weight_initializer(shape=[feature_dim, k_dim])
+            wvi = weight_initializer(shape=[feature_dim, v_dim])
+            setattr(self, 'wq{}'.format(i), 
+                    tf.Variable(wqi, 'wq{}'.format(i)))
+            setattr(self, 'wk{}'.format(i), 
+                    tf.Variable(wki, 'wk{}'.format(i)))
+            setattr(self, 'wv{}'.format(i), 
+                    tf.Variable(wvi, 'wv{}'.format(i)))
+        
+        self.wo = tf.Variable(weight_initializer(shape=[n_heads*v_dim, feature_dim]), 'wo')
+    
+    def __call__(self, q, k, v):
+        heads = []
+        for i in range(self.n_heads):
+            wqi = getattr(self, 'wq{}'.format(i))
+            wki = getattr(self, 'wk{}'.format(i))
+            wvi = getattr(self, 'wv{}'.format(i))
+            
+            lq = tf.matmul(q, wqi)
+            lk = tf.matmul(k, wki)
+            lv = tf.matmul(v, wvi)
+            attention = self.attention(lq, lk, lv)
+            heads.append(attention)
+        
+        y = tf.concat(heads, axis=-1)
+        y = tf.matmul(y, self.wo)
         return y

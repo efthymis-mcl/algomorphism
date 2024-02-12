@@ -3,10 +3,10 @@
 import tensorflow as tf
 from algomorphism.model.base import BaseNeuralNetwork, MetricBase, LossBase
 from algomorphism.model.metrics import WeightedCrossEntropyWithLogits as mWCEL
-from algomorphism.model.layers import GCN, IP, FC
+from algomorphism.model.layers import GraphConv, InnerProduct, FullConnected
 
 
-class GAE(tf.Module, BaseNeuralNetwork):
+class GraphAutoEncoder(tf.Module, BaseNeuralNetwork):
     """
     Graph Auto Encoder.
 
@@ -47,14 +47,14 @@ class GAE(tf.Module, BaseNeuralNetwork):
 
         for i, dfi in enumerate(df_list[:-2]):
             setattr(self, 'gcn{}'.format(i),
-                    GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i))
+                    GraphConv(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i))
                     )
-        self.gcn_z = GCN(df_list[-2], df_list[-1], name="gcn_z")
+        self.gcn_z = GraphConv(df_list[-2], df_list[-1], name="gcn_z")
 
         if ip_weights:
-            self.ip = IP(df_list[-1])
+            self.ip = InnerProduct(df_list[-1])
         else:
-            self.ip = IP()
+            self.ip = InnerProduct()
 
         self.__depth = len(df_list)
 
@@ -79,7 +79,7 @@ class GAE(tf.Module, BaseNeuralNetwork):
         return tuple((y,))
 
 
-class GCNClassifier(tf.Module, BaseNeuralNetwork):
+class GraphConvNetworkClassifier(tf.Module, BaseNeuralNetwork):
     """
     Batch Graph Convolutional Network Classifier. In This architecture of Neural Network, the weights shared for all batch examples.
     So the learning generalized up to maximum number nodes of training examples.
@@ -120,11 +120,11 @@ class GCNClassifier(tf.Module, BaseNeuralNetwork):
 
         for i, dfi in enumerate(df_list[:-1]):
             setattr(self, 'gcn{}'.format(i),
-                    GCN(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i)))
+                    GraphConv(df_list[i], df_list[i+1], 'relu', name='gcn{}'.format(i)))
 
         self.flatten = tf.keras.layers.Flatten()
-        self.fc1 = FC(df_list[0] * df_list[-1], 512, 'relu')
-        self.out = FC(512, nc, 'softmax')
+        self.fc1 = FullConnected(df_list[0] * df_list[-1], 512, 'relu')
+        self.out = FullConnected(512, nc, 'softmax')
 
         self.__depth = len(df_list)
 

@@ -372,7 +372,7 @@ class History(object):
         Append and print epoch performance to history if print types is not None.
 
         Args:
-            dataset (`object`): A dataset of `algomorphis.datasets` with `train` , `val` `test` attributes.
+            dataset (`object`): A dataset of `algomorphism.datasets` with `train` , `val` `test` attributes.
             epoch (`int`): index of epoch,
             print_types (`list`): e.g. types: ['train'], ['train', 'val'], ['val', 'test']
 
