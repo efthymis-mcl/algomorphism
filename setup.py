@@ -27,7 +27,7 @@ setup(
     packages=find_packages(),
     package_dir={'algomorphism': 'algomorphism'},
     install_requires=[
-        'tensorflow',
+        'tensorflow==2.15.0.post1',
         'scikit-learn',
         'numpy',
         'networkx',
